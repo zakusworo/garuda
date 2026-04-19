@@ -157,7 +157,7 @@ def run_geothermal_demo():
     
     print()
     print("╔" + "═" * 68 + "╗")
-    print("║" + " " * 12 + "PRESTO GEOTHERMAL DEMO - Indonesian Volcanic Field" + " " * 7 + "║")
+    print("║" + " " * 12 + "GARUDA GEOTHERMAL DEMO - Indonesian Volcanic Field" + " " * 7 + "║")
     print("╚" + "═" * 68 + "╝")
     print()
     print(f"  Simulation started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

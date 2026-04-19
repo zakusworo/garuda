@@ -296,10 +296,8 @@ If you use GARUDA in your research, please cite:
 
 ## Acknowledgments
 
-- Inspired by the deprecated [GARUDA](https://github.com/padmec-reservoir/GARUDA) project
+- Inspired by the deprecated [PRESTO](https://github.com/padmec-reservoir/PRESTO) project
 - Built on NumPy, SciPy, and Numba
-- Supported by Politeknik Energi dan Pertambangan Bandung
-- Indonesian Geothermal Association (API)
 
 ---
 
@@ -310,10 +308,8 @@ MIT License - see [LICENSE](LICENSE) for details.
 ---
 
 **Author**: Zulfikar Aji Kusworo  
-**Affiliation**: Politeknik Energi dan Pertambangan Bandung, Indonesia  
 **Email**: greataji13@gmail.com  
-**GitHub**: [@zakusworo](https://github.com/zakusworo)  
-**Location**: Bandung, West Java, Indonesia (-6.91°S, 107.61°E)
+**GitHub**: [@zakusworo](https://github.com/zakusworo)
 
 ---
 

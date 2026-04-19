@@ -31,7 +31,7 @@ from garuda.core.rock_properties import RockProperties
 
 def main():
     print("=" * 60)
-    print("PRESTO 1D Single-Phase Flow Example")
+    print("GARUDA 1D Single-Phase Flow Example")
     print("=" * 60)
     
     # === Grid Setup ===

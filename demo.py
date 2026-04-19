@@ -263,7 +263,7 @@ def print_geothermal_extension():
     print_header("GEOTHERMAL EXTENSION (Planned)")
     print()
     
-    print("  The full PRESTO simulator will add:")
+    print("  The full GARUDA simulator will add:")
     print()
     print("  ✓ Non-isothermal flow (temperature coupling)")
     print("  ✓ Water-steam two-phase flow with IAPWS-97 properties")
@@ -287,8 +287,8 @@ def print_geothermal_extension():
     print()
 
 def print_comparison_table():
-    """Compare original vs modern PRESTO."""
-    print_header("ORIGINAL vs MODERN PRESTO")
+    """Compare original vs modern GARUDA."""
+    print_header("ORIGINAL vs MODERN GARUDA")
     print()
     
     print(f"  {'Feature':<25} │ {'Original (2019)':<20} │ {'Modern (2026)':<20}")
@@ -309,16 +309,16 @@ def print_comparison_table():
 # ============================================================================
 
 def main():
-    """Run the PRESTO demo."""
+    """Run the GARUDA demo."""
     
     print()
     print("╔" + "═" * 68 + "╗")
-    print("║" + " " * 15 + "PRESTO DEMO - Reservoir Simulator" + " " * 20 + "║")
+    print("║" + " " * 15 + "GARUDA DEMO - Reservoir Simulator" + " " * 20 + "║")
     print("║" + " " * 10 + "The Modern Python Reservoir Simulation Toolbox" + " " * 11 + "║")
     print("╚" + "═" * 68 + "╝")
     print()
     print(f"  Demo started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print(f"  Location: Bandung, Indonesia (-6.91°S, 107.61°E)")
+    print(f"  Location: Indonesia (Tropical)")
     
     # Create config and solver
     config = DemoConfig()
@@ -354,7 +354,7 @@ def main():
     # Summary
     print_header("DEMO SUMMARY")
     print()
-    print("  This demo showed PRESTO solving a simple 1D flow problem.")
+    print("  This demo showed GARUDA solving a simple 1D flow problem.")
     print("  The full simulator will handle:")
     print()
     print("    • 3D heterogeneous reservoirs")
@@ -362,8 +362,8 @@ def main():
     print("    • Complex well configurations")
     print("    • Real-time AI-driven optimization")
     print()
-    print("  Repository: https://github.com/zakusworo/PRESTO")
-    print("  Documentation: https://presto.readthedocs.io (coming soon)")
+    print("  Repository: https://github.com/zakusworo/garuda")
+    print("  Documentation: https://garuda-sim.readthedocs.io (coming soon)")
     print()
     print("═" * 70)
     print("  Demo completed successfully!")

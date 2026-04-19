@@ -40,7 +40,6 @@ Features:
   • Indonesian geothermal optimized
 
 Author: Zulfikar Aji Kusworo
-Affiliation: Politeknik Energi dan Pertambangan Bandung, Indonesia
 License: MIT
 """
 
