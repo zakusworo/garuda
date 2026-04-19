@@ -10,7 +10,7 @@
 **Affiliation:** Politeknik Energi dan Pertambangan Bandung, Indonesia  
 **Email:** greataji13@gmail.com  
 **GitHub:** @zakusworo  
-**DOI:** 10.5281/zenodo.19650332
+**DOI:** 10.5281/zenodo.19653501
 
 **Date:** April 2026
 

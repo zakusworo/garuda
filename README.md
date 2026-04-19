@@ -288,7 +288,7 @@ If you use GARUDA in your research, please cite:
   title = {GARUDA: Geothermal And Reservoir Understanding with Data-driven Analytics},
   year = {2026},
   url = {https://github.com/zakusworo/garuda},
-  doi = {10.5281/zenodo.xxxxxxx},
+  doi = {10.5281/zenodo.19653501},
 }
 ```
 

@@ -194,7 +194,7 @@ garuda/                  # Main package
   author = {Kusworo, Zulfikar Aji},
   year = {2026},
   url = {https://github.com/zakusworo/garuda},
-  doi = {10.5281/zenodo.xxxxxxx},
+  doi = {10.5281/zenodo.19653501},
 }
 ```
 
