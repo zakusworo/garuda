@@ -1,0 +1,131 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "garuda-sim"
+dynamic = ["version"]
+description = "GARUDA: Geothermal And Reservoir Understanding with Data-driven Analytics - Modern simulation for petroleum and geothermal reservoirs"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Zulfikar Aji Kusworo", email = "greataji13@gmail.com"}
+]
+maintainers = [
+    {name = "Zulfikar Aji Kusworo", email = "greataji13@gmail.com"}
+]
+keywords = [
+    "reservoir simulation",
+    "geothermal",
+    "petroleum",
+    "TPFA",
+    "finite volume",
+    "computational physics",
+    "energy",
+    "renewable energy",
+    "Indonesia"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24.0",
+    "scipy>=1.10.0",
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "numba>=0.57.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.4.0",
+]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "sphinx-autodoc-typehints>=1.24.0",
+    "numpydoc>=1.6.0",
+]
+ml = [
+    "scikit-learn>=1.3.0",
+    "torch>=2.0.0",
+]
+gpu = [
+    "cupy-cuda12x>=12.0.0",
+    "jax[cuda12]>=0.4.0",
+]
+geothermal = [
+    "pvlib>=0.10.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/zakusworo/garuda"
+Documentation = "https://garuda-sim.readthedocs.io"
+Repository = "https://github.com/zakusworo/garuda"
+Issues = "https://github.com/zakusworo/garuda/issues"
+
+[project.scripts]
+garuda-run = "garuda.cli:main"
+
+[tool.setuptools]
+packages = ["garuda"]
+
+[tool.setuptools_scm]
+write_to = "garuda/_version.py"
+version_scheme = "post-release"
+local_scheme = "dirty-tag"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --cov=garuda --cov-report=term-missing --cov-report=html"
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "N", "D", "UP"]
+ignore = ["D100", "D104"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[tool.coverage.run]
+source = ["garuda"]
+omit = ["*/tests/*", "*/_version.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
