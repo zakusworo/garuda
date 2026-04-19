@@ -262,7 +262,7 @@ Contributions welcome! Areas needing help:
 
 ```bash
 # Fork and clone
-git clone https://github.com/YOUR_USERNAME/garuda.git
+git clone https://github.com/zakusworo/garuda.git
 cd garuda
 
 # Install dev dependencies
