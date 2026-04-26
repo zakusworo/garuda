@@ -417,7 +417,6 @@ MIT License — see [LICENSE](LICENSE) for details.
 **Author**: Zulfikar Aji Kusworo  
 **Email**: greataji13@gmail.com  
 **GitHub**: [@zakusworo](https://github.com/zakusworo)
-**Institution**: Politeknik Energi dan Pertambangan Bandung, Indonesia
 
 ---
 
