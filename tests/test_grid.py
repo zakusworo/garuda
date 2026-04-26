@@ -77,9 +77,9 @@ class TestStructuredGrid1D:
         assert grid.cell_faces[0, 0] == 0
         assert grid.cell_faces[0, 1] == 1
         
-        # Last cell has faces 4 (left) and 5 (right)
-        assert grid.cell_faces[-1, 0] == 5
-        assert grid.cell_faces[-1, 1] == 6
+        # Last cell (cell 4) has faces 4 (left) and 5 (right)
+        assert grid.cell_faces[-1, 0] == 4
+        assert grid.cell_faces[-1, 1] == 5
     
     def test_index_conversion(self):
         """Test linear to ijk index conversion."""

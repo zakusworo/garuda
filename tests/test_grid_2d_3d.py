@@ -130,7 +130,7 @@ def test_3d_grid():
         print(f"  Face {i}: cells {grid.face_cells[i]}, area={grid.face_areas[i]:.1f}, normal={grid.face_normals[i]}")
     
     # Verify cell volumes
-    expected_volume = grid.dx * grid.dy * grid.dz
+    expected_volume = float(grid.dx[0] * grid.dy[0] * grid.dz[0])
     print(f"\nExpected cell volume: {expected_volume} m³")
     print(f"Actual cell volumes: {grid.cell_volumes}")
     

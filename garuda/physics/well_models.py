@@ -245,8 +245,8 @@ class PeacemanWell:
         # Pressure difference
         dp = cell_pressure - wellbore_pressure + hydrostatic
         
-        # Flow rate
-        q = self.productivity_index * dp
+        # Flow rate (multiply by density to get mass flow)
+        q = self.productivity_index * dp * density
         
         self.current_rate = q
         self.current_bhp = wellbore_pressure
@@ -260,14 +260,7 @@ class PeacemanWell:
     ) -> Tuple[float, float]:
         """
         Apply operating constraints to determine actual rate and BHP.
-        
-        Parameters
-        ----------
-        cell_pressure : float
-            Grid cell pressure [Pa]
-        density : float
-            Fluid density [kg/m³]
-        
+
         Returns
         -------
         rate : float
@@ -279,44 +272,38 @@ class PeacemanWell:
             # Constant rate constraint
             rate = np.copysign(1.0, self.operating.target_value) * \
                    min(abs(self.operating.target_value), self.operating.max_rate)
-            
+
             # Calculate required BHP
-            if abs(self.productivity_index) > 1e-15:
-                bhp = cell_pressure - rate / self.productivity_index
+            if abs(self.productivity_index) > 1e-15 and density > 0:
+                bhp = cell_pressure - rate / (self.productivity_index * density)
             else:
                 bhp = cell_pressure
-            
+
             # Check BHP limits
-            if rate > 0:  # Producer
+            if rate > 0:  # Producer (positive rate = extraction)
                 if bhp < self.operating.min_bhp:
-                    # Cannot maintain rate, switch to pressure constraint
                     bhp = self.operating.min_bhp
                     rate = self.compute_rate(cell_pressure, bhp, density)
-            else:  # Injector
+            else:  # Injector (negative rate = injection)
                 if bhp > self.operating.max_bhp:
-                    # Cannot maintain rate, switch to pressure constraint
                     bhp = self.operating.max_bhp
                     rate = self.compute_rate(cell_pressure, bhp, density)
-        
+
         elif self.operating.constraint_type == 'pressure':
             # Constant BHP constraint
-            bhp = np.clip(
-                self.operating.target_value,
-                self.operating.min_bhp,
-                self.operating.max_bhp
-            )
-            
+            bhp = min(max(self.operating.target_value, self.operating.min_bhp), self.operating.max_bhp)
+
             rate = self.compute_rate(cell_pressure, bhp, density)
-            
+
             # Check rate limit
             if abs(rate) > self.operating.max_rate:
                 rate = np.copysign(self.operating.max_rate, rate)
-                if abs(self.productivity_index) > 1e-15:
-                    bhp = cell_pressure - rate / self.productivity_index
-        
+                if abs(self.productivity_index) > 1e-15 and density > 0:
+                    bhp = cell_pressure - rate / (self.productivity_index * density)
+
         else:
             raise ValueError(f"Unknown constraint type: {self.operating.constraint_type}")
-        
+
         return rate, bhp
 
 
@@ -520,8 +507,10 @@ class WellManager:
                 'rate': well.current_rate,
                 'bhp': well.current_bhp,
             }
-            
-            if well.current_rate < 0:
+
+            # classify by sign convention: negative production = producer
+            is_producer = well.current_rate < 0 or (well.current_rate == 0 and well.operating.target_value < 0)
+            if is_producer:
                 summary['producers'] += 1
                 summary['total_production'] += abs(well.current_rate)
             else:

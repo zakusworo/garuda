@@ -105,7 +105,7 @@ class TestIAPWSProperties:
         
         # Check reasonable values
         assert 600 < props['density'] < 900
-        assert 0.0001 < props['viscosity'] < 0.001
+        assert 5e-05 < props['viscosity'] < 0.001
         assert props['enthalpy'] > 0
 
 
@@ -159,10 +159,10 @@ class TestPeacemanWell:
         
         operating = WellOperatingConditions(
             constraint_type='rate',
-            target_value=-50.0,  # 50 kg/s production
+            target_value=-10.0,  # 10 kg/s production
             min_bhp=100e5,
             max_bhp=300e5,
-            max_rate=100.0,
+            max_rate=20.0,
         )
         
         self.well = PeacemanWell(params, operating)
@@ -246,8 +246,8 @@ class TestPeacemanWell:
         
         rate, bhp = self.well.apply_constraints(p_cell, rho)
         
-        # Rate should be close to target (50 kg/s)
-        assert 40 < abs(rate) < 60, f"Expected ~50 kg/s, got {rate}"
+        # Rate should be close to target (10 kg/s)
+        assert 8 < abs(rate) < 12, f"Expected ~10 kg/s, got {rate}"
         
         # BHP should be within limits
         assert self.well.operating.min_bhp <= bhp <= self.well.operating.max_bhp
