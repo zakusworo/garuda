@@ -19,7 +19,6 @@
 ```
 
 **Acronym:** **G**eothermal **A**nd **R**eservoir **U**nderstanding + **D**ata-driven **A**nalytics  
-*(GARU + DA = GARUDA)*
 
 **GARUDA** is a modern, open-source reservoir simulator for **petroleum** and **geothermal** energy systems, with special focus on Indonesian volcanic geothermal resources and AI/ML integration.
 
