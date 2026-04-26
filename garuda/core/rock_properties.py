@@ -46,19 +46,19 @@ class RockProperties:
     def __post_init__(self):
         """Convert permeability to SI units and set up tensors."""
         # Convert to m²
-        if self.permiability_unit == 'darcy':
-            self.permiability_m2 = np.asarray(self.permiability) * 9.869233e-13
-        elif self.permiability_unit == 'md':
-            self.permiability_m2 = np.asarray(self.permiability) * 9.869233e-16
+        if self.permeability_unit == 'darcy':
+            self.permeability_m2 = np.asarray(self.permeability) * 9.869233e-13
+        elif self.permeability_unit == 'md':
+            self.permeability_m2 = np.asarray(self.permeability) * 9.869233e-16
         else:  # 'm2'
-            self.permiability_m2 = np.asarray(self.permiability)
+            self.permeability_m2 = np.asarray(self.permeability)
         
         # Build permeability tensor
         self._build_perm_tensor()
     
     def _build_perm_tensor(self):
         """Build full permeability tensor for each cell."""
-        perm = self.permiability_m2
+        perm = self.permeability_m2
         
         if np.isscalar(perm) or perm.ndim == 0:
             # Homogeneous isotropic
@@ -107,8 +107,8 @@ class RockProperties:
             Unit of permeability
         """
         self.porosity = porosity
-        self.permiability = permeability
-        self.permiability_unit = permeability_unit
+        self.permeability = permeability
+        self.permeability_unit = permeability_unit
         self.__post_init__()
     
     def set_channelized_permeability(
