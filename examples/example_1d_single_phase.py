@@ -54,10 +54,10 @@ def main():
         permeability_unit='md',
     )
     print(f"    Porosity: {rock.porosity}")
-    print(f"    Permeability: {100} md = {rock.permiability_m2[0]:.2e} m²")
+    print(f"    Permeability: {100} md = {rock.permeability_m2[0]:.2e} m²")
     
     # Set properties on grid
-    grid.set_permiability(rock.permiability_m2)
+    grid.set_permiability(rock.permeability_m2)
     grid.set_porosity(rock.porosity)
     
     # === Fluid Properties ===
@@ -125,7 +125,7 @@ def main():
     
     # Analytical flux (Darcy's law)
     A = dy * dz  # Cross-sectional area
-    k = rock.permiability_m2[0]  # m²
+    k = rock.permeability_m2[0]  # m²
     dp = p_left - p_right  # Pa
     L = nx * dx  # m
     Q_analytical = k * A * dp / (fluid.mu * L)  # m³/s

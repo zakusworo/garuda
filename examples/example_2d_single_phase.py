@@ -50,9 +50,9 @@ def run_2d_simulation():
     # Set rock properties
     print("\n2. Setting rock properties...")
     rock = RockProperties(porosity=0.2, permeability=100, permeability_unit='md')
-    grid.set_permiability(rock.permiability_m2)
+    grid.set_permiability(rock.permeability_m2)
     grid.set_porosity(rock.porosity)
-    print(f"   Permeability: 100 md = {rock.permiability_m2:.2e} m²")
+    print(f"   Permeability: 100 md = {rock.permeability_m2:.2e} m²")
     print(f"   Porosity: {rock.porosity}")
     
     # Set fluid properties
@@ -146,7 +146,7 @@ def run_3d_simulation():
     # Set rock properties
     print("\n2. Setting rock properties...")
     rock = RockProperties(porosity=0.15, permeability=50, permeability_unit='md')
-    grid.set_permiability(rock.permiability_m2)
+    grid.set_permiability(rock.permeability_m2)
     grid.set_porosity(rock.porosity)
     
     # Set fluid properties

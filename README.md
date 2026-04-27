@@ -317,8 +317,8 @@ garuda/
 - [x] **Well models** (BHP + rate constraints)
 - [x] Thermal flow module
 - [x] **50+ unit and integration tests**
-- [ ] 2D/3D solver completion (pending)
-- [ ] Documentation (Sphinx + ReadTheDocs)
+- [x] 2D/3D solver completion (Numba-accelerated TPFA, verified)
+- [x] Documentation (Sphinx + RTD theme, API autodoc ready)
 
 ### Phase 2: Domain Extensions
 - [ ] Multiphase flow (water/steam two-phase for geothermal)
@@ -354,9 +354,9 @@ garuda/
 
 Contributions welcome! Areas needing help:
 
-1. **2D/3D solver completion** — Finish face connectivity and flux assembly
-2. **Test suite** — Add more unit and integration tests toward 80% coverage
-3. **Documentation** — Expand API docs and tutorials
+1. ~~2D/3D solver completion~~ ✓
+2. ~~Documentation~~ ✓
+3. **Test suite** — Add more unit and integration tests toward 80% coverage
 4. **Multiphase flow** — Implement black oil / compositional two-phase
 5. **ML integration** — Build surrogate models and upscaling
 

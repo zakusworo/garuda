@@ -1,55 +1,51 @@
+
+# Documentation
+# GARUDA specific
+# IDE
+# Jupyter
+# OS
 # Python
-__pycache__/
-*.py[cod]
+# Testing
+# Virtual environments
 *$py.class
+*.egg
+*.egg-info/
+*.log
+*.out
+*.py[cod]
 *.so
+*.swo
+*.swp
+*~
+.DS_Store
 .Python
+.coverage
+.eggs/
+.idea/
+.installed.cfg
+.ipynb_checkpoints/
+.pytest_cache/
+.tox/
+.venv
+.vscode/
+ENV/
+Thumbs.db
+__pycache__/
+_build/
 build/
 develop-eggs/
 dist/
+docs/_build/
+docs/build/
 downloads/
 eggs/
-.eggs/
+env/
+garuda/_version.py
+htmlcov/
 lib/
 lib64/
 parts/
 sdist/
 var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual environments
 venv/
-env/
-ENV/
-.venv
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# Documentation
-docs/_build/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# GARUDA specific
-*.log
-*.out
-garuda/_version.py
+wheels/

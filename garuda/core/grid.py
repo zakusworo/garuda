@@ -392,6 +392,9 @@ class StructuredGrid(Grid):
         else:
             raise ValueError(f"Invalid permeability shape: {perm.shape}")
 
+    # Alias with correct English spelling
+    set_permeability = set_permiability
+
     def set_porosity(self, porosity: np.ndarray):
         """Set porosity for all cells."""
         porosity = np.atleast_1d(porosity)
