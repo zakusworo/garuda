@@ -461,7 +461,9 @@ class WellManager:
                 dz = 10.0
             
             # Get permeability
-            if hasattr(grid, 'permiability'):
+            if hasattr(grid, 'permeability'):
+                k = grid.permeability[cell_idx, 0, 0]  # kx
+            elif hasattr(grid, 'permiability'):
                 k = grid.permiability[cell_idx, 0, 0]  # kx
             else:
                 k = 1e-13  # Default: ~100 md

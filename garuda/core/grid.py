@@ -356,7 +356,7 @@ class StructuredGrid(Grid):
     # ------------------------------------------------------------------
     # Property helpers
     # ------------------------------------------------------------------
-    def set_permiability(self, perm, unit='m2'):
+    def set_permeability(self, perm, unit='m2'):
         """
         Set permeability tensor for all cells.
 
@@ -376,24 +376,27 @@ class StructuredGrid(Grid):
         perm = np.atleast_1d(perm) * factor
 
         if perm.size == 1:
-            self.permiability = np.tile(
+            self.permeability = np.tile(
                 np.eye(3) * float(perm[0]), (self.num_cells, 1, 1)
             )
         elif perm.shape == (self.num_cells,):
-            self.permiability = np.zeros((self.num_cells, 3, 3))
+            self.permeability = np.zeros((self.num_cells, 3, 3))
             for d in range(3):
-                self.permiability[:, d, d] = perm
+                self.permeability[:, d, d] = perm
         elif perm.shape == (self.num_cells, 3):
-            self.permiability = np.zeros((self.num_cells, 3, 3))
+            self.permeability = np.zeros((self.num_cells, 3, 3))
             for d in range(3):
-                self.permiability[:, d, d] = perm[:, d]
+                self.permeability[:, d, d] = perm[:, d]
         elif perm.shape == (self.num_cells, 3, 3):
-            self.permiability = perm
+            self.permeability = perm
         else:
             raise ValueError(f"Invalid permeability shape: {perm.shape}")
 
-    # Alias with correct English spelling
-    set_permeability = set_permiability
+        # Backward-compat alias for old code/tests
+        self.permiability = self.permeability
+
+    # Backward-compatible alias
+    set_permiability = set_permeability
 
     def set_porosity(self, porosity: np.ndarray):
         """Set porosity for all cells."""

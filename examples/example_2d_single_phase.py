@@ -50,7 +50,7 @@ def run_2d_simulation():
     # Set rock properties
     print("\n2. Setting rock properties...")
     rock = RockProperties(porosity=0.2, permeability=100, permeability_unit='md')
-    grid.set_permiability(rock.permeability_m2)
+    grid.set_permeability(rock.permeability_m2)
     grid.set_porosity(rock.porosity)
     print(f"   Permeability: 100 md = {rock.permeability_m2:.2e} m²")
     print(f"   Porosity: {rock.porosity}")
@@ -146,7 +146,7 @@ def run_3d_simulation():
     # Set rock properties
     print("\n2. Setting rock properties...")
     rock = RockProperties(porosity=0.15, permeability=50, permeability_unit='md')
-    grid.set_permiability(rock.permeability_m2)
+    grid.set_permeability(rock.permeability_m2)
     grid.set_porosity(rock.porosity)
     
     # Set fluid properties
@@ -183,7 +183,7 @@ def run_3d_simulation():
     print("\n   Pressure by layer (bar):")
     for k in range(grid.nz):
         layer_pressure = pressure[k * grid.nx * grid.ny:(k + 1) * grid.nx * grid.ny]
-        print(f"   Layer {k} (z={k*grid.dz:.0f}m): avg={layer_pressure.mean()/1e5:.1f} bar")
+        print(f"   Layer {k} (z={k*float(grid.dz[0]):.0f}m): avg={layer_pressure.mean()/1e5:.1f} bar")
     
     print("\n" + "=" * 70)
     print("✅ 3D simulation completed successfully!")

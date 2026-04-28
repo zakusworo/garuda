@@ -98,9 +98,11 @@ class TPFASolver:
         T = np.zeros(num_faces)
         
         # Get permeability (assume isotropic for now)
-        if hasattr(self.grid, 'permiability'):
+        if hasattr(self.grid, 'permeability'):
+            perm = self.grid.permeability
+            k = np.array([perm[i, 0, 0] for i in range(self.grid.num_cells)])
+        elif hasattr(self.grid, 'permiability'):
             perm = self.grid.permiability
-            # Extract diagonal (kx, ky, kz)
             k = np.array([perm[i, 0, 0] for i in range(self.grid.num_cells)])
         else:
             k = np.ones(self.grid.num_cells)
@@ -119,7 +121,7 @@ class TPFASolver:
         """Compute 1D transmissibilities."""
         nx = self.grid.nx
         dx = self.grid.dx if np.isscalar(self.grid.dx) else np.mean(self.grid.dx)
-        A = self.grid.dy * self.grid.dz if hasattr(self.grid, 'dy') else 1.0
+        A = float(np.mean(self.grid.dy) * np.mean(self.grid.dz)) if hasattr(self.grid, 'dy') else 1.0
         
         T = np.zeros(nx + 1)
         
