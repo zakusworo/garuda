@@ -97,25 +97,24 @@ pip install -e ".[geothermal]"
 
 ```python
 from garuda import StructuredGrid, TPFASolver
-
-# Create a 1D grid (10 cells, 100 m each, 1 m² cross-section)
-grid = StructuredGrid(nx=10, ny=1, nz=1, dx=100.0, dy=1.0, dz=1.0)
-
-# Set rock properties directly on the grid
 import numpy as np
-grid.set_porosity(np.full(grid.num_cells, 0.2))
-grid.set_permeability(np.full(grid.num_cells, 1e-12))  # ~1 Darcy in m²
 
-# Create TPFA solver — uses water viscosity from IAPWS-IF97
+# Create a 1D grid (10 cells, 100 m each, 10x10 m² cross-section)
+grid = StructuredGrid(nx=10, ny=1, nz=1, dx=100.0, dy=10.0, dz=10.0)
+
+# Set rock properties
+grid.set_porosity(0.2)
+grid.set_permeability(100, unit='md')  # 100 millidarcy
+
+# Create TPFA solver
 solver = TPFASolver(grid, mu=1e-3, rho=998.0)
 
 # Define boundary conditions (Dirichlet: p_left=200 bar, p_right=100 bar)
-bc_values = [200e5, 100e5]  # Pa
+bc_values = np.array([200e5, 100e5])  # Pa
 
 # Solve for pressure
 pressure = solver.solve(
-    source_terms=[0] * grid.num_cells,
-    bc_type='dirichlet',
+    source_terms=np.zeros(grid.num_cells),
     bc_values=bc_values,
 )
 
@@ -125,37 +124,37 @@ print(f"Pressure range: {pressure.min()/1e5:.1f} - {pressure.max()/1e5:.1f} bar"
 ### Well Model (BHP or Rate Constraint)
 
 ```python
-from garuda.physics.well_models import WellModel
-from garuda.core.fluid_properties import IAPWSFluidProperties
+from garuda.physics.well_models import (
+    PeacemanWell, WellParameters, WellOperatingConditions
+)
 
-fluid = IAPWSFluidProperties()
-
-# Producer well — pressure-controlled
-well = WellModel(
+# Define well parameters
+params = WellParameters(
     name="PROD-1",
-    coordinates=(500.0, 500.0, 1000.0),
-    radius=0.1,           # wellbore radius [m]
-    skin=0.0,             # skin factor
-    perf_top=900.0,
-    perf_bottom=1100.0,
-    grid=grid,
+    cell_index=4,      # completed in cell 4
+    well_radius=0.1,   # wellbore radius [m]
+    skin_factor=0.0,   # skin factor
+    well_depth=1000.0,
 )
 
-# Well is controlled by bottom-hole pressure (negative = producer)
-well.set_operating_constraint(
-    constraint_type = "pressure",   # or "rate"
-    target_value    = -150e5,      # 150 bar BHP, producer
-    max_rate        = 50.0,        # max 50 kg/s
-    min_pressure    = 80e5,        # shut-in below this
+# Define operating conditions
+ops = WellOperatingConditions(
+    constraint_type="pressure",  # or "rate"
+    target_value=150e5,          # BHP target [Pa]
+    max_rate=50.0,               # max rate limit [kg/s]
+    min_bhp=80e5,                # shut-in below this [Pa]
 )
 
-# During simulation — returns mass rate [kg/s]
-rate = well.compute_rate(
-    pressure=np.full(grid.num_cells, 200e5),
-    density=fluid.density(pressure=200e5, temperature=523.15),
-    viscosity=fluid.viscosity(pressure=200e5, temperature=523.15),
+# Create the well
+well = PeacemanWell(params, ops)
+
+# During simulation — compute flow rate [kg/s]
+rate, bhp = well.compute_rate(
+    cell_pressure=200e5,       # current cell pressure [Pa]
+    wellbore_pressure=150e5,   # BHP [Pa]
+    density=780.0,             # kg/m³
 )
-print(f"Well rate: {rate:.2f} kg/s")
+print(f"Well rate: {rate:.2f} kg/s, BHP: {bhp/1e5:.1f} bar")
 ```
 
 ### IAPWS-IF97 Thermophysical Properties
@@ -165,26 +164,20 @@ from garuda.core.iapws_properties import IAPWSFluidProperties
 
 props = IAPWSFluidProperties()
 
-# Single properties
-rho = props.density(pressure=15.0, temperature=550.0)   # [MPa], [K] → kg/m³
-mu  = props.viscosity(pressure=15.0, temperature=550.0)    # → Pa·s
-h   = props.enthalpy(pressure=15.0, temperature=550.0)    # → kJ/kg
+# Single properties (pressure in Pa, temperature in K)
+rho = props.get_density(p=15e6, T=550.0)   # Pa, K → kg/m³
+mu  = props.get_viscosity(p=15e6, T=550.0)  # Pa, K → Pa·s
+h   = props.get_enthalpy(p=15e6, T=550.0)  # Pa, K → kJ/kg
 
-# Get all at once
-all_props = props.get_all_properties(1.0, 293.15)
+# Get all properties at once
+all_props = props.get_all(p=1e6, T=293.15)  # 1 MPa, 20°C
 # → {
-#     'density': 998.14,
-#     'viscosity': 0.001003,
-#     'enthalpy': 84.01,
-#     'specific_heat_cp': 4.182,
-#     'thermal_conductivity': 0.598,
-#     'phase': 'liquid'
+#     'density': ...,          # kg/m³
+#     'viscosity': ...,        # Pa·s
+#     'enthalpy': ...,         # kJ/kg
+#     'specific_heat_cp': ..., # kJ/(kg·K)
+#     'thermal_conductivity': ...,  # W/(m·K)
 # }
-
-# Saturation curve
-Tsat = props.saturation_temperature(pressure=10.0)   # MPa → K
-Psat = props.saturation_pressure(temperature=523.15)  # K → MPa
-phase = props.get_region(pressure=10.0, temperature=523.15)  # 1=liquid, 2=vapor
 ```
 
 ### Geothermal Simulation (Non-Isothermal)
@@ -194,6 +187,7 @@ from garuda.core.grid import StructuredGrid
 from garuda.core.iapws_properties import IAPWSFluidProperties
 from garuda.physics.thermal import ThermalFlow
 from garuda.core.rock_properties import RockProperties
+import numpy as np
 
 # 3D reservoir grid
 grid = StructuredGrid(nx=20, ny=20, nz=10, dx=50.0, dy=50.0, dz=20.0)
@@ -204,10 +198,10 @@ rock = RockProperties(
     permeability=150.0,       # md
     permeability_unit='md',
     lambda_rock=2.5,          # W/(m·K) thermal conductivity
-    cp=840.0,               # J/(kg·K)
+    cp=840.0,                 # J/(kg·K)
 )
-grid.set_porosity(np.full(grid.num_cells, rock.porosity))
-grid.set_permeability(np.full(grid.num_cells, rock.permeability_m2))
+grid.set_porosity(rock.porosity)
+grid.set_permeability(rock.permeability_m2)
 
 # Geothermal fluid + thermal model
 fluid = IAPWSFluidProperties()
@@ -220,24 +214,28 @@ T_init = thermal.compute_geothermal_gradient(
 )
 
 # Injection well (positive rate = injector)
-source_terms = [0.0] * grid.num_cells
+source_terms = np.zeros(grid.num_cells)
 source_terms[grid.num_cells // 2] = 50.0   # 50 kg/s injection
 
-# Time-stepping
+# Time-stepping with coupled flow + heat transport
+solver = TPFASolver(grid, mu=1e-3, rho=998.0)
 dt = 3600  # 1 hour
 for step in range(100):
     result = thermal.step_coupled(
         dt=dt,
         source_terms=source_terms,
-        heat_sources=[0.0] * grid.num_cells,
+        heat_sources=np.zeros(grid.num_cells),
         bc_type='dirichlet',
-        bc_values={'pressure': [250e5, 250e5]},
-        flow_solver=TPFASolver(grid, mu=1e-3, rho=998.0),
+        bc_values={'pressure': np.array([250e5, 250e5])},
+        flow_solver=solver,
     )
 
     if step % 10 == 0:
         print(f"Step {step}: T_max={thermal.temperature.max()-273.15:.1f}°C")
 ```
+>
+> Note: The non-isothermal solver is actively developed. For stable single-phase flow,
+> use `TPFASolver` directly (see 1D example above).
 
 ---
 
