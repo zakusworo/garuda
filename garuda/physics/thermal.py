@@ -296,8 +296,9 @@ class ThermalFlow:
             
             # Step 1: Solve pressure equation (with current T)
             # Update viscosity and density based on current T
-            flow_solver.mu = self.fluid.viscosity(self.temperature)
-            flow_solver.rho = self.fluid.density(self.pressure, self.temperature)
+            # Use scalar values for solver parameters (gravity term needs scalar rho)
+            flow_solver.mu = np.mean(self.fluid.viscosity(self.temperature))
+            flow_solver.rho = np.mean(self.fluid.density(self.pressure, self.temperature))
             flow_solver.transmissibilities = flow_solver._compute_transmissibilities()
             
             # Solve for pressure
