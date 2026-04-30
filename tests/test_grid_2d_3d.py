@@ -45,7 +45,6 @@ def test_1d_grid():
     assert grid.num_cells == 5, f"Expected 5 cells, got {grid.num_cells}"
     
     print("\n✅ 1D grid test PASSED\n")
-    return True
 
 
 def test_2d_grid():
@@ -91,7 +90,6 @@ def test_2d_grid():
     assert grid.dim == 2, f"Expected dim=2, got {grid.dim}"
     
     print("\n✅ 2D grid test PASSED\n")
-    return True
 
 
 def test_3d_grid():
@@ -140,7 +138,6 @@ def test_3d_grid():
     assert np.allclose(grid.cell_volumes, expected_volume), f"Expected volume {expected_volume}, got {grid.cell_volumes}"
     
     print("\n✅ 3D grid test PASSED\n")
-    return True
 
 
 def test_heterogeneous_grid():
@@ -173,7 +170,6 @@ def test_heterogeneous_grid():
     assert not np.allclose(grid.cell_volumes, grid.cell_volumes[0]), "Expected heterogeneous volumes"
     
     print("\n✅ Heterogeneous grid test PASSED\n")
-    return True
 
 
 if __name__ == "__main__":
@@ -183,29 +179,19 @@ if __name__ == "__main__":
     
     all_passed = True
     
-    try:
-        all_passed &= test_1d_grid()
-    except Exception as e:
-        print(f"❌ 1D grid test FAILED: {e}\n")
-        all_passed = False
-    
-    try:
-        all_passed &= test_2d_grid()
-    except Exception as e:
-        print(f"❌ 2D grid test FAILED: {e}\n")
-        all_passed = False
-    
-    try:
-        all_passed &= test_3d_grid()
-    except Exception as e:
-        print(f"❌ 3D grid test FAILED: {e}\n")
-        all_passed = False
-    
-    try:
-        all_passed &= test_heterogeneous_grid()
-    except Exception as e:
-        print(f"❌ Heterogeneous grid test FAILED: {e}\n")
-        all_passed = False
+    for name, test_fn in [
+        ("1D Grid", test_1d_grid),
+        ("2D Grid", test_2d_grid),
+        ("3D Grid", test_3d_grid),
+        ("Heterogeneous Grid", test_heterogeneous_grid),
+    ]:
+        try:
+            test_fn()
+        except Exception as e:
+            print(f"❌ {name} FAILED: {e}\n")
+            import traceback
+            traceback.print_exc()
+            all_passed = False
     
     print("=" * 60)
     if all_passed:

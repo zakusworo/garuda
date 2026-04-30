@@ -54,7 +54,7 @@ class TPFASolver:
     
     Examples
     --------
-    >>> from presto import StructuredGrid, TPFASolver
+    >>> from garuda import StructuredGrid, TPFASolver
     >>> grid = StructuredGrid(nx=10, ny=10, nz=1, dx=100, dy=100, dz=10)
     >>> solver = TPFASolver(grid, mu=1e-3, rho=1000)
     >>> pressure = solver.solve(source_terms, bc)
