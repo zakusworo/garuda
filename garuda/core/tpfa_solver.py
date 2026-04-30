@@ -211,8 +211,8 @@ class TPFASolver:
         
         # Use vectorized computation for speed
         T = self._compute_3d_transmissibilities_numba(
-            k, nx, ny, nz, dx, dy, dz, 
-            num_faces_x, num_faces_y, num_faces_z
+            k, nx, ny, nz, dx, dy, dz,
+            num_faces_x, num_faces_y, num_faces_z, self.mu
         )
         
         return T
@@ -223,7 +223,8 @@ class TPFASolver:
         k: np.ndarray,
         nx: int, ny: int, nz: int,
         dx: float, dy: float, dz: float,
-        num_faces_x: int, num_faces_y: int, num_faces_z: int
+        num_faces_x: int, num_faces_y: int, num_faces_z: int,
+        mu: float,
     ) -> np.ndarray:
         """Numba-accelerated 3D transmissibility computation."""
         T = np.zeros(num_faces_x + num_faces_y + num_faces_z)
@@ -237,16 +238,16 @@ class TPFASolver:
                     
                     if ix == 0:
                         cell_idx = iy * nx + iz * nx * ny
-                        T[face_idx] = k[cell_idx] * A / (dx / 2)
+                        T[face_idx] = k[cell_idx] * A / (dx / 2) / mu
                     elif ix == nx:
                         cell_idx = (nx - 1) + iy * nx + iz * nx * ny
-                        T[face_idx] = k[cell_idx] * A / (dx / 2)
+                        T[face_idx] = k[cell_idx] * A / (dx / 2) / mu
                     else:
                         cell_L = (ix - 1) + iy * nx + iz * nx * ny
                         cell_R = ix + iy * nx + iz * nx * ny
                         dL = dx / 2
                         dR = dx / 2
-                        T[face_idx] = 2 * A / (dL / k[cell_L] + dR / k[cell_R])
+                        T[face_idx] = 2 * A / (dL / k[cell_L] + dR / k[cell_R]) / mu
         
         # Y-faces
         for iz in prange(nz):
@@ -257,36 +258,36 @@ class TPFASolver:
                     
                     if iy == 0:
                         cell_idx = ix + iz * nx * ny
-                        T[face_idx] = k[cell_idx] * A / (dy / 2)
+                        T[face_idx] = k[cell_idx] * A / (dy / 2) / mu
                     elif iy == ny:
                         cell_idx = ix + (ny - 1) * nx + iz * nx * ny
-                        T[face_idx] = k[cell_idx] * A / (dy / 2)
+                        T[face_idx] = k[cell_idx] * A / (dy / 2) / mu
                     else:
                         cell_L = ix + (iy - 1) * nx + iz * nx * ny
                         cell_R = ix + iy * nx + iz * nx * ny
                         dL = dy / 2
                         dR = dy / 2
-                        T[face_idx] = 2 * A / (dL / k[cell_L] + dR / k[cell_R])
+                        T[face_idx] = 2 * A / (dL / k[cell_L] + dR / k[cell_R]) / mu
         
         # Z-faces
         for iz in range(nz + 1):
             for iy in prange(ny):
                 for ix in range(nx):
-                    face_idx = num_faces_x + num_faces_y + iy * nx + ix * ny + iz * nx * ny
+                    face_idx = num_faces_x + num_faces_y + iz * nx * ny + iy * nx + ix
                     A = dx * dy
                     
                     if iz == 0:
                         cell_idx = ix + iy * nx
-                        T[face_idx] = k[cell_idx] * A / (dz / 2)
+                        T[face_idx] = k[cell_idx] * A / (dz / 2) / mu
                     elif iz == nz:
                         cell_idx = ix + iy * nx + (nz - 1) * nx * ny
-                        T[face_idx] = k[cell_idx] * A / (dz / 2)
+                        T[face_idx] = k[cell_idx] * A / (dz / 2) / mu
                     else:
                         cell_L = ix + iy * nx + (iz - 1) * nx * ny
                         cell_R = ix + iy * nx + iz * nx * ny
                         dL = dz / 2
                         dR = dz / 2
-                        T[face_idx] = 2 * A / (dL / k[cell_L] + dR / k[cell_R])
+                        T[face_idx] = 2 * A / (dL / k[cell_L] + dR / k[cell_R]) / mu
         
         return T
     
@@ -538,7 +539,7 @@ class TPFASolver:
         if solver == 'direct':
             pressure = spsolve(A, b)
         elif solver == 'iterative':
-            pressure, info = cg(A, b, tol=tol, maxiter=max_iter)
+            pressure, info = cg(A, b, atol=tol, maxiter=max_iter)
             if info != 0:
                 warnings.warn(f"CG solver did not converge (info={info})")
         else:
@@ -550,46 +551,28 @@ class TPFASolver:
         self,
         pressure: np.ndarray,
         source_terms: np.ndarray,
+        bc_type: str = 'dirichlet',
+        bc_values: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """
-        Compute mass balance residual.
-        
+        Compute mass balance residual using system matrix A·p - b.
+
         Parameters
         ----------
         pressure : ndarray
             Current pressure field
         source_terms : ndarray
             Source/sink terms
-        
+        bc_type : str, optional
+            Boundary condition type (needed for boundary flux accounting)
+        bc_values : ndarray, optional
+            Boundary condition values
+
         Returns
         -------
         residual : ndarray
-            Mass balance residual for each cell
+            Mass balance residual for each cell [kg/s]
         """
-        flux_data = self.compute_flux(pressure)
-        
-        # Accumulate fluxes per cell using face connectivity
-        residual = np.zeros(self.grid.num_cells)
-        
-        for f in range(self.grid.num_faces):
-            cell_L, cell_R = self.grid.face_cells[f]
-            flux_f = flux_data.flux[f]
-            
-            if cell_L >= 0 and cell_R >= 0:
-                # Interior face: flux contributes to both cells
-                # Positive flux = flow from L to R
-                residual[cell_L] -= flux_f  # Outflow from L
-                residual[cell_R] += flux_f  # Inflow to R
-                
-            elif cell_L >= 0:
-                # Boundary face: flux out of cell_L
-                residual[cell_L] -= flux_f
-                
-            elif cell_R >= 0:
-                # Boundary face: flux into cell_R
-                residual[cell_R] += flux_f
-        
-        # Add source terms
-        residual += source_terms
-        
+        A, b = self.build_matrix(source_terms, bc_type, bc_values)
+        residual = A @ pressure - b
         return residual
