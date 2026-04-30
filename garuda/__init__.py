@@ -51,6 +51,7 @@ from garuda.core.iapws_properties import IAPWSFluidProperties, WaterSteamPropert
 from garuda.physics.single_phase import SinglePhaseFlow
 from garuda.physics.thermal import ThermalFlow
 from garuda.physics.well_models import PeacemanWell, WellManager, WellParameters, WellOperatingConditions
+from garuda.physics.multiphase import MultiphaseFlow, MultiphaseState
 
 __version__ = "0.1.0-dev"
 __author__ = "Zulfikar Aji Kusworo"
@@ -74,6 +75,12 @@ __all__ = [
     "RockProperties",
     "SinglePhaseFlow",
     "ThermalFlow",
+    "MultiphaseFlow",
+    "MultiphaseState",
+    "PeacemanWell",
+    "WellManager",
+    "WellParameters",
+    "WellOperatingConditions",
     "GARUDA_LOGO",
     "__version__",
 ]
