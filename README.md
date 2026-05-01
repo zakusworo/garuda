@@ -378,6 +378,12 @@ Then open **🧊 3D Visualizer** from the sidebar.
 
 > Powered by **PyVista** (VTK) off-screen rendering → PNG displayed in Streamlit. First render takes ~5–10s; subsequent renders are cached.
 
+### Example Output
+
+![3D Reservoir Visualizer — Temperature distribution with isothermal surfaces, orthogonal slices, well trajectory, and pressure drawdown](3d_reservoir_demo.png)
+
+> *3D temperature field (64–266 °C) with isothermal contour shells, X/Y/Z slice planes, production well trajectory, and pressure-drawdown field at 24 MPa max pressure.*
+
 ---
 
 ## Architecture
@@ -527,9 +533,9 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-**Author**: Zulfikar Aji Kusworo  
-**Email**: greataji13@gmail.com  
-**GitHub**: [@zakusworo](https://github.com/zakusworo)
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
