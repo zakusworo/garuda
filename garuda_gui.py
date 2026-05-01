@@ -159,12 +159,13 @@ elif page == "📐 Grid Builder":
 
             # Visualise cross-section for 2D/3D
             if ny > 1 or nz > 1:
-                perm_2d = grid.permeability.reshape((nz, ny, nx)).mean(axis=0)
+                kx = grid.permeability[:, 0, 0]
+                perm_2d = kx.reshape((nz, ny, nx)).mean(axis=0)
                 fig = px.imshow(
                     perm_2d,
                     color_continuous_scale="Viridis",
                     labels={"color": "Permeability (m²)"},
-                    title="Mean Permeability (Z-averaged)",
+                    title="Mean Kx Permeability (Z-averaged)",
                 )
                 st.plotly_chart(fig, use_container_width=True)
             else:
@@ -173,13 +174,13 @@ elif page == "📐 Grid Builder":
                 fig.add_trace(
                     go.Scatter(
                         x=x,
-                        y=grid.permeability,
+                        y=grid.permeability[:, 0, 0],
                         mode="lines+markers",
-                        name="Permeability",
+                        name="Kx Permeability",
                     )
                 )
                 fig.update_layout(
-                    title="1D Permeability Profile",
+                    title="1D Kx Permeability Profile",
                     xaxis_title="Distance (m)",
                     yaxis_title="Permeability (m²)",
                 )
@@ -189,7 +190,9 @@ elif page == "📐 Grid Builder":
             df = pd.DataFrame(
                 {
                     "Cell": np.arange(grid.num_cells),
-                    "Permeability (m²)": grid.permeability,
+                    "Kx (m²)": grid.permeability[:, 0, 0],
+                    "Ky (m²)": grid.permeability[:, 1, 1],
+                    "Kz (m²)": grid.permeability[:, 2, 2],
                     "Porosity": grid.porosity,
                     "Volume (m³)": grid.cell_volumes,
                 }
