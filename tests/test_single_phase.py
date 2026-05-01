@@ -93,23 +93,17 @@ class TestSinglePhaseFlowInitialization:
         np.testing.assert_array_equal(flow_1d.temperature, np.full(grid_1d.num_cells, 293.15))
 
     def test_pressure_always_overwritten_in_post_init(self, grid_1d, fluid_water, rock_default):
-        """__post_init__ unconditionally sets pressure=1e5, even if provided.
+        """__post_init__ now preserves user-provided pressure (fixed behaviour).
 
-        This is a minor design issue: the dataclass field default=None is
-        checked for temperature (line 46-47) but pressure is overwritten
-        regardless (line 44).  Users who pass pressure=... get it reset.
+        Previously, pressure was always overwritten with 1e5.
+        After the fix, custom values are honoured.
         """
         custom_p = np.linspace(1e5, 2e5, grid_1d.num_cells)
         flow = SinglePhaseFlow(
             grid=grid_1d, fluid=fluid_water, rock=rock_default,
             pressure=custom_p,
         )
-        # Currently overwritten — document that this happens
-        assert not np.array_equal(flow.pressure, custom_p), (
-            "pressure was NOT overwritten by __post_init__ — this behaviour "
-            "may have been fixed.  If intended, update __post_init__ to check "
-            "`if self.pressure is None` like it does for temperature."
-        )
+        np.testing.assert_array_equal(flow.pressure, custom_p)
 
     def test_temperature_can_be_overridden(self, grid_1d, fluid_water, rock_default):
         """Explicit temperature array bypasses the 293.15 K default."""
@@ -492,55 +486,35 @@ class TestStepImplicitEdgeCases:
 @pytest.mark.skipif(not NUMPY_AVAILABLE, reason="NumPy not available")
 class TestPrevAccumulationBug:
     """
-    BUG: step_implicit() references self.prev_accumulation on line 133
-    but __post_init__ never initialises it.  The variable is first assigned
-    inside the iteration loop (line 149), so the very first call to
-    step_implicit always raises AttributeError.
+    FIXED: step_implicit() no longer crashes on first call because
+    __post_init__ now initialises prev_accumulation automatically.
     """
 
-    def test_crashes_without_manual_set(self, flow_1d, solver_1d):
-        """Calling step_implicit without setting prev_accumulation crashes."""
+    def test_runs_without_manual_set(self, flow_1d, solver_1d):
+        """Calling step_implicit without setting prev_accumulation works."""
         source_terms = np.zeros(flow_1d.grid.num_cells)
-        try:
-            flow_1d.step_implicit(
-                dt=86400, source_terms=source_terms,
-                bc_type='dirichlet', bc_values=np.array([1e5, 1e5]),
-                solver=solver_1d,
-            )
-            # Should not reach here — but if it does, it means the bug
-            # was silently fixed without us knowing; flag it.
-            pytest.fail(
-                "step_implicit did NOT crash — prev_accumulation bug may "
-                "have been fixed.  Update __post_init__ or remove this test."
-            )
-        except AttributeError as e:
-            assert 'prev_accumulation' in str(e)
+        result = flow_1d.step_implicit(
+            dt=86400, source_terms=source_terms,
+            bc_type='dirichlet', bc_values=np.array([1e5, 1e5]),
+            solver=solver_1d,
+        )
+        assert 'converged' in result
+        assert 'iterations' in result
+        assert 'residual_norm' in result
 
-    def test_workaround_sets_prev_accumulation(self, flow_1d):
-        """The workaround: set prev_accumulation=compute_accumulation()."""
-        flow_1d.prev_accumulation = flow_1d.compute_accumulation()
+    def test_prev_accumulation_in_post_init(self, flow_1d):
+        """After construction, prev_accumulation exists and has correct shape."""
         assert hasattr(flow_1d, 'prev_accumulation')
         assert flow_1d.prev_accumulation.shape == (flow_1d.grid.num_cells,)
 
-    def test_prev_accumulation_not_in_post_init(self, flow_1d):
-        """After construction, prev_accumulation does not exist."""
-        assert not hasattr(flow_1d, 'prev_accumulation'), (
-            "prev_accumulation is present — __post_init__ may have been "
-            "updated.  If so, update TestPrevAccumulationBug."
-        )
-
     def test_second_call_works_after_first(self, flow_1d, solver_1d):
-        """After step_implicit runs once (via workaround), a second call
-        should succeed because prev_accumulation was set inside the loop."""
-        # First call: workaround
-        flow_1d.prev_accumulation = flow_1d.compute_accumulation()
+        """After step_implicit runs once, a second call should succeed."""
         source_terms = np.zeros(flow_1d.grid.num_cells)
         flow_1d.step_implicit(
             dt=86400, source_terms=source_terms,
             bc_type='dirichlet', bc_values=np.array([1e5, 1e5]),
             solver=solver_1d,
         )
-        # Second call: should NOT crash because prev_accumulation exists now
         result = flow_1d.step_implicit(
             dt=86400, source_terms=source_terms,
             bc_type='dirichlet', bc_values=np.array([1e5, 1e5]),

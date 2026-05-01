@@ -1,5 +1,4 @@
-"""
-GARUDA - Geothermal And Reservoir Understanding with Data-driven Analytics
+"""GARUDA - Geothermal And Reservoir Understanding with Data-driven Analytics
 
 Modern reservoir simulation for petroleum and geothermal energy.
 
@@ -43,15 +42,15 @@ Author: Zulfikar Aji Kusworo
 License: MIT
 """
 
-from garuda.core.grid import Grid, StructuredGrid
-from garuda.core.tpfa_solver import TPFASolver
 from garuda.core.fluid_properties import FluidProperties
-from garuda.core.rock_properties import RockProperties
+from garuda.core.grid import Grid, StructuredGrid
 from garuda.core.iapws_properties import IAPWSFluidProperties, WaterSteamProperties
+from garuda.core.rock_properties import RockProperties
+from garuda.core.tpfa_solver import TPFASolver
+from garuda.physics.multiphase import MultiphaseFlow, MultiphaseState
 from garuda.physics.single_phase import SinglePhaseFlow
 from garuda.physics.thermal import ThermalFlow
-from garuda.physics.well_models import PeacemanWell, WellManager, WellParameters, WellOperatingConditions
-from garuda.physics.multiphase import MultiphaseFlow, MultiphaseState
+from garuda.physics.well_models import PeacemanWell, WellManager, WellOperatingConditions, WellParameters
 
 __version__ = "0.1.0-dev"
 __author__ = "Zulfikar Aji Kusworo"
@@ -73,6 +72,8 @@ __all__ = [
     "TPFASolver",
     "FluidProperties",
     "RockProperties",
+    "IAPWSFluidProperties",
+    "WaterSteamProperties",
     "SinglePhaseFlow",
     "ThermalFlow",
     "MultiphaseFlow",

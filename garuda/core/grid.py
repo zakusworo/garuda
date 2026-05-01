@@ -1,12 +1,11 @@
-"""
-Grid module - Mesh generation and management for reservoir simulation.
+"""Grid module - Mesh generation and management for reservoir simulation.
 
 Supports structured and unstructured grids with full 3D capability.
 """
 
-import numpy as np
-from typing import Tuple
 from dataclasses import dataclass, field
+
+import numpy as np
 
 
 @dataclass
@@ -46,8 +45,7 @@ class Grid:
 
 @dataclass
 class StructuredGrid(Grid):
-    """
-    Structured Cartesian grid for reservoir simulation.
+    """Structured Cartesian grid for reservoir simulation.
 
     Parameters
     ----------
@@ -61,6 +59,7 @@ class StructuredGrid(Grid):
     >>> grid = StructuredGrid(nx=10, ny=10, nz=5, dx=100, dy=100, dz=10)
     >>> print(f"Grid has {grid.num_cells} cells")
     Grid has 500 cells
+
     """
 
     nx: int = 10
@@ -79,9 +78,7 @@ class StructuredGrid(Grid):
         if arr.shape == (1,):
             return np.full(n, float(arr[0]))
         if arr.shape != (n,):
-            raise ValueError(
-                f"Spacing array must have shape ({n},) or scalar, got {arr.shape}"
-            )
+            raise ValueError(f"Spacing array must have shape ({n},) or scalar, got {arr.shape}")
         return arr.astype(float)
 
     def __post_init__(self):
@@ -117,32 +114,20 @@ class StructuredGrid(Grid):
         # This matches get_cell_index / get_ijk.
         if self.dim == 3:
             # meshgrid gives i-major when indexing='ij'
-            xx, yy, zz = np.meshgrid(
-                xc_centers, yc_centers, zc_centers, indexing='ij'
-            )
-            self.cell_centroids = np.column_stack(
-                [xx.ravel(), yy.ravel(), zz.ravel()]
-            )
-            dx3, dy3, dz3 = np.meshgrid(
-                self.dx, self.dy, self.dz, indexing='ij'
-            )
+            xx, yy, zz = np.meshgrid(xc_centers, yc_centers, zc_centers, indexing="ij")
+            self.cell_centroids = np.column_stack([xx.ravel(), yy.ravel(), zz.ravel()])
+            dx3, dy3, dz3 = np.meshgrid(self.dx, self.dy, self.dz, indexing="ij")
             self.cell_volumes = (dx3 * dy3 * dz3).ravel()
 
         elif self.dim == 2:
-            xx, yy = np.meshgrid(
-                xc_centers, yc_centers, indexing='ij'
-            )
+            xx, yy = np.meshgrid(xc_centers, yc_centers, indexing="ij")
             zz = np.zeros_like(xx)
-            self.cell_centroids = np.column_stack(
-                [xx.ravel('F'), yy.ravel('F'), zz.ravel('F')]
-            )
-            dx2, dy2 = np.meshgrid(self.dx, self.dy, indexing='ij')
-            self.cell_volumes = (dx2 * dy2).ravel('F') * self.dz[0]
+            self.cell_centroids = np.column_stack([xx.ravel("F"), yy.ravel("F"), zz.ravel("F")])
+            dx2, dy2 = np.meshgrid(self.dx, self.dy, indexing="ij")
+            self.cell_volumes = (dx2 * dy2).ravel("F") * self.dz[0]
 
         else:  # 1D
-            self.cell_centroids = np.column_stack(
-                [xc_centers, np.zeros(self.nx), np.zeros(self.nx)]
-            )
+            self.cell_centroids = np.column_stack([xc_centers, np.zeros(self.nx), np.zeros(self.nx)])
             self.cell_volumes = self.dx.copy() * self.dy[0] * self.dz[0]
 
         # Generate faces and connectivity
@@ -153,8 +138,7 @@ class StructuredGrid(Grid):
     # Face generation
     # ------------------------------------------------------------------
     def _generate_faces(self, xc, yc, zc, xc_c, yc_c, zc_c):
-        """
-        Generate face geometry, areas, normals, and face_cells connectivity.
+        """Generate face geometry, areas, normals, and face_cells connectivity.
         Uses pre-computed edge / centre coordinates.
         """
         if self.dim == 1:
@@ -162,8 +146,7 @@ class StructuredGrid(Grid):
             self.face_areas = np.ones(self.num_faces, dtype=float)
             self.face_centroids = np.zeros((self.num_faces, 3), dtype=float)
             self.face_normals = np.zeros((self.num_faces, 3), dtype=float)
-            self.face_normals[:, 0] = [-1 if i == 0 else 1
-                                        for i in range(self.num_faces)]
+            self.face_normals[:, 0] = [-1 if i == 0 else 1 for i in range(self.num_faces)]
 
             self.face_cells = np.zeros((self.num_faces, 2), dtype=int)
             self.face_cells[0] = [-1, 0]
@@ -182,12 +165,12 @@ class StructuredGrid(Grid):
             # x-faces (normal in x): each has area = dy  (one per row * nx+1 cols)
             for j in range(self.ny):
                 base = j * (self.nx + 1)
-                self.face_areas[base: base + self.nx + 1] = self.dy[j]
+                self.face_areas[base : base + self.nx + 1] = self.dy[j]
 
             # y-faces (normal in y): each has area = dx  (one per col * ny+1 rows)
             for j in range(self.ny + 1):
                 base = num_faces_x + j * self.nx
-                self.face_areas[base: base + self.nx] = self.dx
+                self.face_areas[base : base + self.nx] = self.dx
 
             # X-face centroids / normals
             f = 0
@@ -243,7 +226,7 @@ class StructuredGrid(Grid):
             for k in range(self.nz):
                 for j in range(self.ny):
                     base = f
-                    self.face_areas[base: base + self.nx + 1] = dy_dz[j + k * self.ny]
+                    self.face_areas[base : base + self.nx + 1] = dy_dz[j + k * self.ny]
                     for i in range(self.nx + 1):
                         self.face_centroids[f, 0] = xc[i]
                         self.face_centroids[f, 1] = yc_c[j]
@@ -255,7 +238,7 @@ class StructuredGrid(Grid):
             for k in range(self.nz):
                 for j in range(self.ny + 1):
                     base = f
-                    self.face_areas[base: base + self.nx] = dx_dz[k::self.nz] if self.nz > 1 else dx_dz
+                    self.face_areas[base : base + self.nx] = dx_dz[k :: self.nz] if self.nz > 1 else dx_dz
                     for i in range(self.nx):
                         self.face_centroids[f, 0] = xc_c[i]
                         self.face_centroids[f, 1] = yc[j]
@@ -265,7 +248,7 @@ class StructuredGrid(Grid):
             # Z-faces: area = dx*dy
             for k in range(self.nz + 1):
                 base = f
-                self.face_areas[base: base + self.nx * self.ny] = dx_dy
+                self.face_areas[base : base + self.nx * self.ny] = dx_dy
                 for j in range(self.ny):
                     for i in range(self.nx):
                         self.face_centroids[f, 0] = xc_c[i]
@@ -311,18 +294,18 @@ class StructuredGrid(Grid):
 
         if self.dim == 1:
             for i in range(self.nx):
-                self.cell_faces[i, 0] = i        # left
-                self.cell_faces[i, 1] = i + 1    # right
+                self.cell_faces[i, 0] = i  # left
+                self.cell_faces[i, 1] = i + 1  # right
 
         elif self.dim == 2:
             num_faces_x = (self.nx + 1) * self.ny
             for j in range(self.ny):
                 for i in range(self.nx):
                     cid = i + j * self.nx
-                    self.cell_faces[cid, 0] = i + j * (self.nx + 1)          # west
-                    self.cell_faces[cid, 1] = i + 1 + j * (self.nx + 1)      # east
-                    self.cell_faces[cid, 2] = num_faces_x + i + j * self.nx          # south
-                    self.cell_faces[cid, 3] = num_faces_x + i + (j + 1) * self.nx    # north
+                    self.cell_faces[cid, 0] = i + j * (self.nx + 1)  # west
+                    self.cell_faces[cid, 1] = i + 1 + j * (self.nx + 1)  # east
+                    self.cell_faces[cid, 2] = num_faces_x + i + j * self.nx  # south
+                    self.cell_faces[cid, 3] = num_faces_x + i + (j + 1) * self.nx  # north
 
         else:  # 3D
             num_faces_x = (self.nx + 1) * self.ny * self.nz
@@ -331,12 +314,14 @@ class StructuredGrid(Grid):
                 for j in range(self.ny):
                     for i in range(self.nx):
                         cid = i + j * self.nx + k * self.nx * self.ny
-                        self.cell_faces[cid, 0] = (i + j * (self.nx + 1) + k * (self.nx + 1) * self.ny)
-                        self.cell_faces[cid, 1] = (i + 1 + j * (self.nx + 1) + k * (self.nx + 1) * self.ny)
-                        self.cell_faces[cid, 2] = (num_faces_x + i + j * self.nx + k * self.nx * (self.ny + 1))
-                        self.cell_faces[cid, 3] = (num_faces_x + i + (j + 1) * self.nx + k * self.nx * (self.ny + 1))
-                        self.cell_faces[cid, 4] = (num_faces_x + num_faces_y + i + j * self.nx + k * self.nx * self.ny)
-                        self.cell_faces[cid, 5] = (num_faces_x + num_faces_y + i + j * self.nx + (k + 1) * self.nx * self.ny)
+                        self.cell_faces[cid, 0] = i + j * (self.nx + 1) + k * (self.nx + 1) * self.ny
+                        self.cell_faces[cid, 1] = i + 1 + j * (self.nx + 1) + k * (self.nx + 1) * self.ny
+                        self.cell_faces[cid, 2] = num_faces_x + i + j * self.nx + k * self.nx * (self.ny + 1)
+                        self.cell_faces[cid, 3] = num_faces_x + i + (j + 1) * self.nx + k * self.nx * (self.ny + 1)
+                        self.cell_faces[cid, 4] = num_faces_x + num_faces_y + i + j * self.nx + k * self.nx * self.ny
+                        self.cell_faces[cid, 5] = (
+                            num_faces_x + num_faces_y + i + j * self.nx + (k + 1) * self.nx * self.ny
+                        )
 
     # ------------------------------------------------------------------
     # Indexing helpers
@@ -345,7 +330,7 @@ class StructuredGrid(Grid):
         """Convert (ix, iy, iz) to linear cell index."""
         return ix + iy * self.nx + iz * self.nx * self.ny
 
-    def get_ijk(self, cell_index: int) -> Tuple[int, int, int]:
+    def get_ijk(self, cell_index: int) -> tuple[int, int, int]:
         """Convert linear cell index to (ix, iy, iz)."""
         iz = cell_index // (self.nx * self.ny)
         rem = cell_index % (self.nx * self.ny)
@@ -356,9 +341,8 @@ class StructuredGrid(Grid):
     # ------------------------------------------------------------------
     # Property helpers
     # ------------------------------------------------------------------
-    def set_permeability(self, perm, unit='m2'):
-        """
-        Set permeability tensor for all cells.
+    def set_permeability(self, perm, unit="m2"):
+        """Set permeability tensor for all cells.
 
         Parameters
         ----------
@@ -370,15 +354,14 @@ class StructuredGrid(Grid):
             - (num_cells, 3, 3): full tensor
         unit : str
             Unit of input ('m2' for m², 'md' for millidarcy)
+
         """
         md_to_m2 = 9.869233e-16
-        factor = md_to_m2 if unit.lower() == 'md' else 1.0
+        factor = md_to_m2 if unit.lower() == "md" else 1.0
         perm = np.atleast_1d(perm) * factor
 
         if perm.size == 1:
-            self.permeability = np.tile(
-                np.eye(3) * float(perm[0]), (self.num_cells, 1, 1)
-            )
+            self.permeability = np.tile(np.eye(3) * float(perm[0]), (self.num_cells, 1, 1))
         elif perm.shape == (self.num_cells,):
             self.permeability = np.zeros((self.num_cells, 3, 3))
             for d in range(3):
@@ -406,6 +389,4 @@ class StructuredGrid(Grid):
         elif porosity.shape == (self.num_cells,):
             self.porosity = porosity.astype(float)
         else:
-            raise ValueError(
-                f"Invalid porosity shape {porosity.shape}, expected scalar or ({self.num_cells},)"
-            )
+            raise ValueError(f"Invalid porosity shape {porosity.shape}, expected scalar or ({self.num_cells},)")

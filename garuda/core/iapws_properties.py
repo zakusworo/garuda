@@ -1,5 +1,4 @@
-"""
-IAPWS-97 Water/Steam Properties Module for GARUDA.
+"""IAPWS-97 Water/Steam Properties Module for GARUDA.
 
 Implements the International Association for the Properties of Water and Steam
 (IAPWS) Industrial Formulation 1997 for thermophysical properties of water and steam.
@@ -9,20 +8,16 @@ Valid ranges:
     - Pressure: 0 to 100 MPa
 """
 
-import numpy as np
-from typing import Tuple
 from dataclasses import dataclass
-import warnings
 
+import numpy as np
 
 _R_GAS = 0.461526  # Specific gas constant [kJ/(kg·K)]
 
 
 @dataclass
 class WaterSteamProperties:
-    """
-    IAPWS-97 water/steam property calculator.
-    """
+    """IAPWS-97 water/steam property calculator."""
 
     def __post_init__(self):
         self._cache = {}
@@ -32,8 +27,7 @@ class WaterSteamProperties:
     # =====================================================================
 
     def get_region(self, p: float, T: float) -> int:
-        """
-        Determine IAPWS-97 region.
+        """Determine IAPWS-97 region.
         Returns: 1=liquid, 2=vapor, 3=supercritical, 4=saturation
         """
         p_sat = self.saturation_pressure(T)
@@ -60,8 +54,7 @@ class WaterSteamProperties:
     # =====================================================================
 
     def saturation_pressure(self, T: float) -> float:
-        """
-        Saturation pressure [MPa] via IAPWS-IF97 region-4 backward equation.
+        """Saturation pressure [MPa] via IAPWS-IF97 region-4 backward equation.
         Valid:  273.15 K <= T <= 647.096 K.
         """
         Tc = 647.096
@@ -77,19 +70,16 @@ class WaterSteamProperties:
 
         # IAPWS-IF97 saturation-pressure coefficients
         J = [1.0, 1.5, 3.0, 3.5, 4.0, 7.5]
-        n = [-7.85951783, 1.84408259, -11.7866497,
-             22.6807411, -15.9618719, 1.80122502]
+        n = [-7.85951783, 1.84408259, -11.7866497, 22.6807411, -15.9618719, 1.80122502]
 
-        ln_pi = sum(ni * (tau ** Ji) for ni, Ji in zip(n, J))
+        ln_pi = sum(ni * (tau**Ji) for ni, Ji in zip(n, J))
         p_sat = Pc * np.exp((1.0 / theta) * ln_pi)
         return p_sat
 
     def saturation_temperature(self, p: float) -> float:
-        """
-        Saturation temperature [K] via IAPWS-IF97 region-4 backward equation.
-        """
+        """Saturation temperature [K] via IAPWS-IF97 region-4 backward equation."""
         Tc = 647.096  # K
-        Pc = 22.064   # MPa
+        Pc = 22.064  # MPa
 
         if p >= Pc:
             return Tc
@@ -103,7 +93,7 @@ class WaterSteamProperties:
             -0.17073846940092e2,
             0.12020824702470e5,
             -0.32325550322333e7,
-            -0.38452086912490e3
+            -0.38452086912490e3,
         ]
 
         E = beta * beta + n[2] * beta + n[5]
@@ -119,11 +109,17 @@ class WaterSteamProperties:
         Tc = 647.096
         rhoc = 322.0
         tau = 1.0 - T / Tc
-        b = [1.99274064, 1.09965342, -0.510839303, -1.75493479,
-             -45.5170352, -6.64596587e-2, 2.60803957, 1.49151086]
-        rho = 1.0 + b[0]*tau**(1/3.0) + b[1]*tau**(2/3.0) + b[2]*tau**(4/3.0) + \
-              b[3]*tau**(5/3.0) + b[4]*tau**(16/3.0) + b[5]*tau**(43/3.0) + \
-              b[6]*np.exp(b[7]*tau)
+        b = [1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.64596587e-2, 2.60803957, 1.49151086]
+        rho = (
+            1.0
+            + b[0] * tau ** (1 / 3.0)
+            + b[1] * tau ** (2 / 3.0)
+            + b[2] * tau ** (4 / 3.0)
+            + b[3] * tau ** (5 / 3.0)
+            + b[4] * tau ** (16 / 3.0)
+            + b[5] * tau ** (43 / 3.0)
+            + b[6] * np.exp(b[7] * tau)
+        )
         return rhoc * rho
 
     def saturation_density_vapor(self, T: float) -> float:
@@ -131,11 +127,16 @@ class WaterSteamProperties:
         Tc = 647.096
         rhoc = 322.0
         tau = 1.0 - T / Tc
-        b = [-2.0315024, -2.6830294, -5.38626492, -17.2991605,
-             -44.6384722, -64.098544, 78.19975, 1.0]
-        rho = b[0]*tau**(1/3.0) + b[1]*tau**(2/3.0) + b[2]*tau**(4/3.0) + \
-              b[3]*tau**(5/3.0) + b[4]*tau**(16/3.0) + b[5]*tau**(43/3.0) + \
-              b[6]*np.exp(b[7]*tau)
+        b = [-2.0315024, -2.6830294, -5.38626492, -17.2991605, -44.6384722, -64.098544, 78.19975, 1.0]
+        rho = (
+            b[0] * tau ** (1 / 3.0)
+            + b[1] * tau ** (2 / 3.0)
+            + b[2] * tau ** (4 / 3.0)
+            + b[3] * tau ** (5 / 3.0)
+            + b[4] * tau ** (16 / 3.0)
+            + b[5] * tau ** (43 / 3.0)
+            + b[6] * np.exp(b[7] * tau)
+        )
         return rhoc * np.exp(rho)
 
     # =====================================================================
@@ -163,7 +164,7 @@ class WaterSteamProperties:
         rho0 = 999.842
         t = T - 273.15
         # Thermal expansion
-        rho = rho0 - 0.0675*t - 0.00352*t**2 + 7.9e-6*t**3
+        rho = rho0 - 0.0675 * t - 0.00352 * t**2 + 7.9e-6 * t**3
         # Pressure compressibility
         rho = rho + 0.5 * p * 1e6 / 2.2e9
         return max(rho, 600.0)
@@ -212,7 +213,7 @@ class WaterSteamProperties:
         T_ref = 373.15
         mu_ref = 12.1e-6
         S = 960.0
-        mu = mu_ref * (T / T_ref)**1.5 * (T_ref + S) / (T + S)
+        mu = mu_ref * (T / T_ref) ** 1.5 * (T_ref + S) / (T + S)
         return mu
 
     # =====================================================================
@@ -259,7 +260,7 @@ class WaterSteamProperties:
         """Thermal conductivity [W/(m·K)]."""
         region = self.get_region(p, T)
         if region == 1:
-            k = 0.56 + 0.001 * (T - 300) - 2e-6 * (T - 300)**2
+            k = 0.56 + 0.001 * (T - 300) - 2e-6 * (T - 300) ** 2
             return np.clip(k, 0.5, 0.7)
         elif region == 2:
             return 0.02 + 5e-5 * (T - 373)
@@ -275,13 +276,13 @@ class WaterSteamProperties:
         p_sat = self.saturation_pressure(T)
         Tc, Pc = 647.096, 22.064
         if T > Tc and p > Pc:
-            return 'supercritical'
+            return "supercritical"
         elif abs(p - p_sat) < 0.01:
-            return 'two-phase'
+            return "two-phase"
         elif p > p_sat:
-            return 'liquid'
+            return "liquid"
         else:
-            return 'vapor'
+            return "vapor"
 
     # =====================================================================
     # CONVENIENCE METHODS
@@ -290,14 +291,14 @@ class WaterSteamProperties:
     def get_all_properties(self, p: float, T: float) -> dict:
         """Get all thermophysical properties at once."""
         return {
-            'pressure': p,
-            'temperature': T,
-            'density': self.density(p, T),
-            'viscosity': self.viscosity(p, T),
-            'enthalpy': self.enthalpy(p, T),
-            'specific_heat_cp': self.specific_heat_cp(p, T),
-            'thermal_conductivity': self.thermal_conductivity(p, T),
-            'phase': self.phase(p, T),
+            "pressure": p,
+            "temperature": T,
+            "density": self.density(p, T),
+            "viscosity": self.viscosity(p, T),
+            "enthalpy": self.enthalpy(p, T),
+            "specific_heat_cp": self.specific_heat_cp(p, T),
+            "thermal_conductivity": self.thermal_conductivity(p, T),
+            "phase": self.phase(p, T),
         }
 
 
@@ -307,9 +308,8 @@ class IAPWSFluidProperties:
     def __init__(self):
         self.iapws = WaterSteamProperties()
 
-    def get_properties(self, p: float, T: float) -> Tuple[float, float]:
-        """
-        Get viscosity and density for TPFA solver.
+    def get_properties(self, p: float, T: float) -> tuple[float, float]:
+        """Get viscosity and density for TPFA solver.
 
         Parameters
         ----------
@@ -324,6 +324,7 @@ class IAPWSFluidProperties:
             Viscosity [Pa·s]
         rho : float
             Density [kg/m³]
+
         """
         p_mpa = p / 1e6
         rho = self.iapws.density(p_mpa, T)
@@ -345,8 +346,8 @@ class IAPWSFluidProperties:
     def get_all(self, p: float, T: float) -> dict:
         p_mpa = p / 1e6
         props = self.iapws.get_all_properties(p_mpa, T)
-        props['enthalpy'] *= 1000
-        props['pressure'] *= 1e6
+        props["enthalpy"] *= 1000
+        props["pressure"] *= 1e6
         return props
 
 
@@ -370,10 +371,10 @@ if __name__ == "__main__":
 
     for p, T in conditions:
         all_props = props.get_all_properties(p, T)
-        print(f"\nP = {p:.0f} MPa, T = {T:.0f} K ({T-273.15:.1f}°C)")
+        print(f"\nP = {p:.0f} MPa, T = {T:.0f} K ({T - 273.15:.1f}°C)")
         print(f"  Phase: {all_props['phase']}")
         print(f"  Density: {all_props['density']:.1f} kg/m³")
-        print(f"  Viscosity: {all_props['viscosity']*1e6:.1f} µPa·s")
+        print(f"  Viscosity: {all_props['viscosity'] * 1e6:.1f} µPa·s")
         print(f"  Enthalpy: {all_props['enthalpy']:.1f} kJ/kg")
         print(f"  Cp: {all_props['specific_heat_cp']:.2f} kJ/(kg·K)")
         print(f"  k: {all_props['thermal_conductivity']:.3f} W/(m·K)")
