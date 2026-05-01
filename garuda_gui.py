@@ -446,9 +446,12 @@ elif page == "🌡️ IAPWS-IF97 Properties":
 
             c5, c6, c7, c8 = st.columns(4)
             c5.metric("Thermal k", f"{props.get('thermal_conductivity', 0):.3f}", "W/(m·K)")
-            c6.metric("Prandtl", f"{props.get('prandtl', 0):.3f}")
-            c7.metric("Compressibility", f"{props.get('compressibility', 0):.3e}", "1/Pa")
-            c8.metric("Expansivity", f"{props.get('thermal_expansivity', 0):.3e}", "1/K")
+            pr = props.get('prandtl')
+            c6.metric("Prandtl", f"{pr:.3f}" if pr is not None else "N/A")
+            comp = props.get('compressibility')
+            c7.metric("Compressibility", f"{comp:.3e}" if comp is not None else "N/A", "1/Pa")
+            exp = props.get('thermal_expansivity')
+            c8.metric("Expansivity", f"{exp:.3e}" if exp is not None else "N/A", "1/K")
 
             st.divider()
             st.subheader("Full Property Table")
@@ -624,7 +627,11 @@ elif page == "🪨 Dual Porosity / MINC":
             c2.metric("Kazemi σ", f"{sigma_kaz:.4e}", "1/m²")
             c3.metric("Lim-Aguilera σ", f"{sigma_la:.4e}", "1/m²")
 
-            st.metric("Interporosity transfer α", f"{alpha:.4e}", "1/s")
+            # lambda = α * k_m / k_f * L_f²  (dimensionless)
+            lam = dp.interporosity_flow_coefficient(
+                compressibility=1e-9, viscosity=1e-3
+            )
+            st.metric("Interporosity flow λ", f"{lam:.4e}", "dimensionless")
 
             # Shape factor comparison chart
             models = ["Warren-Root", "Kazemi", "Lim-Aguilera"]
@@ -669,10 +676,10 @@ elif page == "🌐 Source Network":
         sep = None
         reinj = None
         if add_sep:
-            sep = Separator(name="SEP-01", separator_type="flash")
+            sep = Separator(name="SEP-01")
             st.info("Separator added")
         if add_reinj:
-            reinj = Reinjector(name="REINJ-01", target_rate=50.0)
+            reinj = Reinjector(name="REINJ-01", cell_index=0, target_rate=50.0)
             st.info("Reinjector added")
 
         run_btn = st.button("Analyse Network", type="primary")
