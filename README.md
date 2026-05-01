@@ -54,7 +54,10 @@
 - 📊 History matching tools (planned)
 - 🎯 Well optimization (planned)
 
-### HPC / Scalable Solvers (Optional)
+### Interactive 3D Visualization
+- 🧊 **3D Reservoir Visualizer** — isothermal surfaces, cross-section slices, flow streamlines, well trajectories, pressure drawdown
+- 🖼️ **PNG/VTK export** — screenshots for papers, VTK for ParaView post-processing
+- 🎛️ **Live-configurable** — grid size, temperatures, well position, drawdown, all toggled interactively
 - 🖥️ **PETSc backend** — distributed-memory KSP linear solvers (CG, GMRES, BiCGSTAB) with AMG preconditioning (GAMG, hypre)
 - 🖥️ **DMDA distributed mesh** — ghost-cell exchange for structured grids on multi-node clusters
 - 🖥️ **SNES non-linear solver** — Newton-Krylov for coupled multiphase systems
@@ -347,6 +350,33 @@ python demo_geothermal.py
 ```
 
 > These standalone demos work with NumPy only — no heavy dependencies needed.
+
+---
+
+## 3D Reservoir Visualizer
+
+Launch the interactive Streamlit GUI for real-time 3D visualization:
+
+```bash
+streamlit run garuda_gui.py
+```
+
+Then open **🧊 3D Visualizer** from the sidebar.
+
+| Feature | Description |
+|---------|-------------|
+| **Isothermal Surfaces** | Render 3D temperature contour shells (e.g. 150°C, 200°C) — ideal for visualizing free convection plumes |
+| **Cross-Section Slices** | X/Y/Z orthogonal slice planes showing the interior temperature field |
+| **Flow Streamlines** | Darcy-velocity pathlines from injection seeds to the production well |
+| **Well Trajectory** | Red tube trajectory with spherical wellhead marker |
+| **Pressure Drawdown** | Configurable pressure drop (MPa) around the well |
+| **Live Config** | Grid size (up to 80×80×40), surface/bottom temperatures, well position — all adjustable |
+
+**Export**
+- **PNG** — one-click screenshot for papers and presentations
+- **VTK** — opens in ParaView for further post-processing
+
+> Powered by **PyVista** (VTK) off-screen rendering → PNG displayed in Streamlit. First render takes ~5–10s; subsequent renders are cached.
 
 ---
 
