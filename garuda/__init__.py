@@ -77,7 +77,63 @@ from garuda.core.source_network import (
     SourceNode,
 )
 
-__version__ = "0.1.0-dev"
+__version__ = "0.2.0"
+
+__all__ = [
+    "Grid",
+    "StructuredGrid",
+    "TPFASolver",
+    "FluidProperties",
+    "RockProperties",
+    "IAPWSFluidProperties",
+    "WaterSteamProperties",
+    "SinglePhaseFlow",
+    "ThermalFlow",
+    "MultiphaseFlow",
+    "MultiphaseState",
+    "PeacemanWell",
+    "WellManager",
+    "WellParameters",
+    "WellOperatingConditions",
+    "RelativePermeabilityModel",
+    "CoreyRelativePermeability",
+    "VanGenuchtenMualem",
+    "LinearRelativePermeability",
+    "StoneIRelativePermeability",
+    "CapillaryPressureModel",
+    "BrooksCoreyPc",
+    "VanGenuchtenPc",
+    "TransferModel",
+    "BlockGeometry",
+    "DualPorosityModel",
+    "DualPorosityParams",
+    "ThermodynamicsRegion",
+    "WaterRegion",
+    "SteamRegion",
+    "SupercriticalRegion",
+    "SaturationCurve",
+    "RegionThermodynamics",
+    "FluidThermoState",
+    "SourceNode",
+    "Separator",
+    "Reinjector",
+    "SourceGroup",
+    "SourceNetwork",
+    "GARUDA_LOGO",
+    "__version__",
+]
+
+# Optional PETSc solver backend
+has_petsc = False
+
+try:
+    from garuda.solvers.petsc_solver import PETScDMSolver, PETScTPFASolver
+
+    has_petsc = True
+    __all__.extend(["PETScTPFASolver", "PETScDMSolver", "has_petsc"])
+except ImportError:
+    pass
+
 __author__ = "Zulfikar Aji Kusworo"
 __email__ = "greataji13@gmail.com"
 

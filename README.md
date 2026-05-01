@@ -54,12 +54,13 @@
 - 📊 History matching tools (planned)
 - 🎯 Well optimization (planned)
 
-### AI/ML Integration (Planned)
-- 🤖 ML-based permeability upscaling (CNN on heterogeneity)
-- 🧠 Neural surrogate models (1000× faster than numerical)
-- 📊 Bayesian history matching (MCMC parameter inversion)
-- 🎯 RL for well control optimization
-- 🔗 Multi-agent AI assistant integration (Ollama LLM)
+### HPC / Scalable Solvers (Optional)
+- 🖥️ **PETSc backend** — distributed-memory KSP linear solvers (CG, GMRES, BiCGSTAB) with AMG preconditioning (GAMG, hypre)
+- 🖥️ **DMDA distributed mesh** — ghost-cell exchange for structured grids on multi-node clusters
+- 🖥️ **SNES non-linear solver** — Newton-Krylov for coupled multiphase systems
+
+> PETSc solver is optional.  GARUDA ships with a pure Python fallback
+> (`TPFASolver` via SciPy).  Install PETSc for million-cell simulations.
 
 ---
 

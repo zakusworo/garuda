@@ -74,6 +74,9 @@ gpu = [
 geothermal = [
     "pvlib>=0.10.0",
 ]
+petsc = [
+    "petsc4py>=3.20.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/zakusworo/garuda"
@@ -85,7 +88,7 @@ Issues = "https://github.com/zakusworo/garuda/issues"
 garuda-run = "garuda.cli:main"
 
 [tool.setuptools]
-packages = ["garuda"]
+packages = ["garuda", "garuda.core", "garuda.physics", "garuda.solvers", "garuda.ml", "garuda.agents", "garuda.utils"]
 
 [tool.setuptools_scm]
 write_to = "garuda/_version.py"
