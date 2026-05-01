@@ -618,7 +618,11 @@ elif page == "🪨 Dual Porosity / MINC":
             sigma_wr = dp.warren_root_shape_factor()
             sigma_kaz = dp.kazemi_shape_factor()
             sigma_la = dp.lim_aguilera_shape_factor()
-            alpha = dp.interporosity_transfer(sigma_wr)
+
+            # lambda = α * k_m / k_f * L_f²  (dimensionless)
+            lam = dp.interporosity_flow_coefficient(
+                compressibility=1e-9, viscosity=1e-3
+            )
 
             st.success(f"σ (Warren-Root) = **{sigma_wr:.4e} 1/m²**")
 
@@ -627,10 +631,6 @@ elif page == "🪨 Dual Porosity / MINC":
             c2.metric("Kazemi σ", f"{sigma_kaz:.4e}", "1/m²")
             c3.metric("Lim-Aguilera σ", f"{sigma_la:.4e}", "1/m²")
 
-            # lambda = α * k_m / k_f * L_f²  (dimensionless)
-            lam = dp.interporosity_flow_coefficient(
-                compressibility=1e-9, viscosity=1e-3
-            )
             st.metric("Interporosity flow λ", f"{lam:.4e}", "dimensionless")
 
             # Shape factor comparison chart
