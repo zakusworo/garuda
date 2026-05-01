@@ -84,9 +84,47 @@ pip install -e ".[ml]"
 # Optional: GPU acceleration
 pip install -e ".[gpu]"
 
-# Optional: Geothermal-specific tools
-pip install -e ".[geothermal]"
+# Optional: HPC / Scalable Solvers (PETSc)
+pip install -e ".[petsc]"
 ```
+
+### PETSc Installation (System Dependency)
+
+`petsc4py` is a Python wrapper around PETSc, which must be installed at the
+system level first:
+
+**Ubuntu / Debian**
+
+```bash
+sudo apt-get update
+sudo apt-get install petsc-dev libpetsc-real-dev
+pip install petsc4py
+```
+
+**macOS (Homebrew)**
+
+```bash
+brew install petsc
+pip install petsc4py
+```
+
+**Build from source (for AMG / hypre)**
+
+```bash
+# Download PETSc from https://petsc.org/release/download/
+# Configure with algebraic multigrid (recommended for reservoir simulations)
+python configure \
+  --with-fc=0 \
+  --download-f2blaslapack \
+  --download-hypre \
+  --download-metis \
+  --download-parmetis
+make PETSC_DIR=/path/to/petsc PETSC_ARCH=arch-linux all
+pip install petsc4py
+```
+
+> For best performance, always configure PETSc with `--download-hypre`
+> to enable hypre-BoomerAMG preconditioning for heterogeneous permeability fields.
 
 ### Requirements
 - Python 3.10+
@@ -241,6 +279,39 @@ for step in range(100):
 >
 > Note: The non-isothermal solver is actively developed. For stable single-phase flow,
 > use `TPFASolver` directly (see 1D example above).
+
+---
+
+### PETSc Large-Scale Solver (Optional)
+
+```python
+from garuda import StructuredGrid
+from garuda.solvers import PETScTPFASolver, has_petsc
+
+if not has_petsc:
+    raise RuntimeError("Install PETSc backend: pip install petsc4py")
+
+# 100 × 100 × 20 grid = 200,000 cells
+grid = StructuredGrid(nx=100, ny=100, nz=20, dx=10.0, dy=10.0, dz=5.0)
+grid.set_permeability(1e-14)  # m²
+grid.set_porosity(0.2)
+
+solver = PETScTPFASolver(
+    grid,
+    solver_type="gmres",
+    pc_type="gamg",  # algebraic multigrid — ideal for heterogeneous fields
+    tol=1e-12,
+)
+
+# Run in parallel: mpirun -np 8 python run_sim.py
+source = np.zeros(grid.num_cells)
+pressure = solver.solve(source, bc_type="dirichlet", bc_values=np.array([250e5, 100e5]))
+
+print(f"Min pressure : {pressure.min()/1e5:.1f} bar")
+print(f"Max pressure : {pressure.max()/1e5:.1f} bar")
+print(f"Solver config: {solver.get_solver_info()}")
+solver.destroy()
+```
 
 ---
 
