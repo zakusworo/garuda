@@ -461,7 +461,10 @@ elif page == "🌡️ IAPWS-IF97 Properties":
     st.divider()
     st.subheader("Saturation Curve Explorer")
     p_sat_mpa = st.slider("Pressure for T_sat (MPa)", 0.1, 22.064, 5.0)
-    t_sat_k = fluid.saturation_temperature(p_sat_mpa * 1e6)
+    # Use the underlying WaterSteamProperties for saturation temperature
+    from garuda.core.iapws_properties import WaterSteamProperties
+    _iapws = WaterSteamProperties()
+    t_sat_k = _iapws.saturation_temperature(p_sat_mpa)
     st.info(f"Saturation temperature @ {p_sat_mpa:.2f} MPa = **{t_sat_k - 273.15:.2f} °C**")
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -497,7 +500,7 @@ elif page == "⚗️ Multiphase Models":
             l_ = c2.number_input("l (Mualem)", -5.0, 5.0, 0.5)
             swr = c1.number_input("Swr", 0.0, 0.99, 0.15)
             snr = c2.number_input("Snr", 0.0, 0.99, 0.0)
-            relperm = VanGenuchtenMualem(n, l_, swr, snr)
+            relperm = VanGenuchtenMualem(n=n, swr=swr, snr=snr)
 
         elif model_type == "Linear":
             swr = st.number_input("Swr", 0.0, 0.99, 0.15)
@@ -549,11 +552,11 @@ elif page == "⚗️ Multiphase Models":
             snr = st.number_input("Snr", 0.0, 0.99, 0.0)
             pc_model = BrooksCoreyPc(pd, lam, swr, snr)
         else:
-            alpha = st.number_input("α (1/Pa)", 1e-8, 1.0, 1e-4, format="%.1e")
+            p0 = st.number_input("P₀ (Pa)", 1.0, 1e7, 1e4)
             n = st.number_input("n", 1.01, 10.0, 2.0)
             swr = st.number_input("Swr", 0.0, 0.99, 0.2)
             snr = st.number_input("Snr", 0.0, 0.99, 0.0)
-            pc_model = VanGenuchtenPc(alpha, n, swr, snr)
+            pc_model = VanGenuchtenPc(p0=p0, n=n, swr=swr, snr=snr)
 
         pc_val = pc_model(sw)
 
@@ -648,56 +651,56 @@ elif page == "🌐 Source Network":
         st.subheader("Network Builder")
         num_sources = st.number_input("Number of sources", 1, 10, 2)
 
-        network = SourceNetwork()
+        from garuda.core.source_network import SourceGroup, Separator, Reinjector
+        group = SourceGroup(name="FIELD", group_rate_target=None)
         sources: list[SourceNode] = []
         for i in range(int(num_sources)):
             with st.expander(f"Source {i + 1}"):
                 name = st.text_input(f"Name", f"SRC-{i + 1:02d}", key=f"name_{i}")
                 cell = st.number_input(f"Cell index", 0, 10000, i * 10, key=f"cell_{i}")
                 rate = st.number_input(f"Rate (kg/s)", -1000.0, 1000.0, 50.0, key=f"rate_{i}")
-                bhp = st.number_input(f"BHP (bar)", 1.0, 1000.0, 150.0, key=f"bhp_{i}")
-                src = SourceNode(name=name, cell_index=cell, rate=rate, bhp=bhp * 1e5)
+                src = SourceNode(name=name, cell_index=cell, rate=rate)
                 sources.append(src)
-                network.add_source(src)
+                group.add_node(src)
 
         add_sep = st.checkbox("Add Separator")
         add_reinj = st.checkbox("Add Reinjector")
 
+        sep = None
+        reinj = None
         if add_sep:
-            sep = network.add_separator(name="SEP-01", separator_type="flash")
+            sep = Separator(name="SEP-01", separator_type="flash")
             st.info("Separator added")
         if add_reinj:
-            reinj = network.add_reinjector(name="REINJ-01", fraction=0.85)
-            if add_sep:
-                network.connect(sep, reinj)
-            st.info("Reinjector added (85 % fraction)")
+            reinj = Reinjector(name="REINJ-01", target_rate=50.0)
+            st.info("Reinjector added")
 
         run_btn = st.button("Analyse Network", type="primary")
 
     with col2:
         if run_btn:
             st.subheader("Network Summary")
-            st.metric("Total rate", f"{network.total_rate:.2f} kg/s")
-            st.metric("Net rate", f"{network.net_rate:.2f} kg/s")
-            st.metric("Number of sources", len(network.sources))
+            total_rate = group.compute_group_rate()
+            st.metric("Total rate", f"{total_rate:.2f} kg/s")
+            st.metric("Number of sources", len(group.nodes))
 
             # Source table
             data = []
-            for src in network.sources:
+            for src in group.nodes.values():
                 data.append(
                     {
                         "Name": src.name,
                         "Cell": src.cell_index,
                         "Rate (kg/s)": src.rate,
-                        "BHP (bar)": src.bhp / 1e5 if src.bhp else None,
-                        "Type": src.node_type,
+                        "Phase": src.phase,
+                        "Active": src.active,
                     }
                 )
             st.dataframe(pd.DataFrame(data), use_container_width=True)
 
             # Rate balance chart
-            names = [s.name for s in network.sources]
-            rates = [s.rate for s in network.sources]
+            names = [s.name for s in group.nodes.values()]
+            rates = [s.rate for s in group.nodes.values()]
             colors = ["#2ca02c" if r >= 0 else "#d62728" for r in rates]
             fig = go.Figure(
                 data=[go.Bar(x=names, y=rates, marker_color=colors)]
@@ -729,19 +732,14 @@ elif page == "🔬 Region Thermodynamics":
     with col2:
         if eval_btn:
             rt = RegionThermodynamics()
-            state = rt.evaluate(p=p_mpa * 1e6, T=t_k)
+            state = rt.get_properties(pressure=p_mpa * 1e6, temperature=t_k)
 
             st.success(f"Region: **{state.region}**")
 
             c1, c2, c3 = st.columns(3)
             c1.metric("Density", f"{state.density:.2f}", "kg/m³")
             c2.metric("Viscosity", f"{state.viscosity * 1e6:.1f}", "µPa·s")
-            c3.metric("Enthalpy", f"{state.enthalpy:.1f}", "kJ/kg")
-
-            c4, c5, c6 = st.columns(3)
-            c4.metric("Cp", f"{state.cp:.2f}", "kJ/(kg·K)")
-            c5.metric("Thermal k", f"{state.thermal_conductivity:.3f}", "W/(m·K)")
-            c6.metric("Compressibility", f"{state.compressibility:.3e}", "1/Pa")
+            c3.metric("Enthalpy", f"{state.enthalpy / 1000:.1f}", "kJ/kg")
 
             # Phase diagram: P-T with saturation curve
             p_range = np.linspace(0.1, 22.0, 100)
@@ -776,6 +774,7 @@ elif page == "🔬 Region Thermodynamics":
 
     st.divider()
     st.subheader("Saturation Curve Look-up")
+    rt = RegionThermodynamics()
     p_lookup = st.number_input("Pressure for T_sat (MPa)", 0.1, 22.064, 5.0)
     t_sat = rt.saturation_curve.saturation_temperature(p_lookup * 1e6) - 273.15
     st.info(f"Saturation temperature @ {p_lookup:.2f} MPa = **{t_sat:.2f} °C**")
