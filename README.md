@@ -4,8 +4,8 @@
 
 [![CI](https://github.com/zakusworo/garuda/actions/workflows/ci.yml/badge.svg)](https://github.com/zakusworo/garuda/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests: 50+](https://img.shields.io/badge/tests-50%2B%20passing-brightgreen.svg)](https://github.com/zakusworo/garuda/actions/workflows/ci.yml)
-[![Coverage: 49%](https://img.shields.io/badge/coverage-49%25-yellow.svg)](./htmlcov)
+[![Tests: 550+](https://img.shields.io/badge/tests-550%2B%20passing-brightgreen.svg)](https://github.com/zakusworo/garuda/actions/workflows/ci.yml)
+[![Coverage: 89%](https://img.shields.io/badge/coverage-89%25-brightgreen.svg)](./htmlcov)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Made with ❤️ in Indonesia](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F%20Indonesia-red)](https://indonesia.id)
 
@@ -36,12 +36,16 @@
 - ✅ **Structured grids** (1D, 2D, 3D Cartesian) with heterogeneous permeability and porosity
 - ✅ **Numba-accelerated** solvers for performance
 - ✅ **Pure Python** implementation (no C++ compilation needed)
-- ✅ **50+ unit & integration tests** with pytest and coverage reporting
+- ✅ **550+ unit & integration tests** with pytest and coverage reporting
 
 ### Geothermal Extensions
 - 🌡️ Temperature-dependent fluid properties (IAPWS-IF97 water/steam)
 - 🔥 Coupled heat transport (conduction + convection)
-- 💧 Reinjection modeling for sustainable production
+- 💧 **Source networks** — Waiwera-inspired producers, injectors, separators, reinjectors, and source groups
+- 🪨 **Dual-porosity / MINC** — Warren-Root, Kazemi, Lim-Aguilera shape factors with PSS & transient transfer
+- 💧 **Relative permeability** — Corey, van Genuchten-Mualem, Linear, and Stone I models
+- 💧 **Capillary pressure** — Brooks-Corey and van Genuchten models
+- 🧊 **Region-based thermodynamics** — water (IF97 Region 1), steam (Region 2), supercritical, and saturation curve interpolation
 - 🌋 Indonesian geothermal reservoir templates (volcanic, high-T)
 
 ### Petroleum Extensions
@@ -284,11 +288,16 @@ garuda/
 │   │   ├── tpfa_solver.py       # TPFA finite volume solver (Numba JIT)
 │   │   ├── fluid_properties.py  # Basic PVT properties
 │   │   ├── iapws_properties.py  # IAPWS-IF97 water/steam properties
-│   │   └── rock_properties.py   # Permeability, porosity, thermal
+│   │   ├── rock_properties.py   # Permeability, porosity, thermal
+│   │   ├── source_network.py    # Waiwera-inspired producers, injectors, separators, reinjectors
+│   │   ├── dual_porosity.py    # MINC dual-porosity (Warren-Root, Kazemi, Lim-Aguilera)
+│   │   └── region_thermodynamics.py  # Region-based EOS (water, steam, supercritical)
 │   ├── physics/
 │   │   ├── single_phase.py      # Single-phase mass conservation
 │   │   ├── thermal.py           # Coupled non-isothermal flow
-│   │   └── well_models.py       # BHP/rate-constrained well models
+│   │   ├── well_models.py       # BHP/rate-constrained well models
+│   │   ├── relative_permeability.py  # Corey, van Genuchten, Linear, Stone I
+│   │   └── capillary_pressure.py     # Brooks-Corey, van Genuchten
 │   ├── ml/                      # (Planned)
 │   │   ├── upscaling_cnn.py     # ML permeability upscaling
 │   │   └── surrogate_model.py   # Neural network emulator
@@ -318,9 +327,14 @@ garuda/
 - [x] 2D/3D solver completion (Numba-accelerated TPFA, verified)
 - [x] Documentation (Sphinx + RTD theme, API autodoc ready)
 
-### Phase 2: Domain Extensions
-- [ ] Multiphase flow (water/steam two-phase for geothermal)
-- [ ] Black oil model (for petroleum)
+### Phase 2: Domain Extensions ✅ (v0.2.0)
+- [x] Multiphase flow (water/steam two-phase for geothermal)
+- [x] Source networks — Waiwera-inspired producers, injectors, separators, reinjectors
+- [x] Dual-porosity / MINC — Warren-Root, Kazemi, Lim-Aguilera with shape factors
+- [x] Relative permeability — Corey, van Genuchten, Linear, Stone I
+- [x] Capillary pressure — Brooks-Corey, van Genuchten
+- [x] Region-based thermodynamics — IF97 Region 1/2, supercritical, saturation curve
+- [ ] Black oil model (petroleum)
 - [ ] History matching tools
 - [ ] TOUGH2 comparison benchmarks
 
@@ -352,11 +366,11 @@ garuda/
 
 Contributions welcome! Areas needing help:
 
-1. ~~2D/3D solver completion~~ ✓
-2. ~~Documentation~~ ✓
-3. **Test suite** — Add more unit and integration tests toward 80% coverage
-4. **Multiphase flow** — Implement black oil / compositional two-phase
-5. **ML integration** — Build surrogate models and upscaling
+1. ~~Test suite~~ ✓ — 550+ tests, 89% coverage
+2. **Multiphase flow solver** — Couple new rel-perm/pc models into TPFA
+3. **Black oil model** — Petroleum compositional simulation
+4. **ML integration** — Build surrogate models and upscaling CNN
+5. **Multi-agent AI assistant** — LLM-powered reservoir simulation agent
 
 ### Development Setup
 
