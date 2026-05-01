@@ -7,7 +7,7 @@
 ---
 
 **Principal Investigator:** Zulfikar Aji Kusworo  
-**Affiliation:** Politeknik Energi dan Pertambangan Bandung, Indonesia  
+**Affiliation:** Bandung, Indonesia  
 **Email:** greataji13@gmail.com  
 **GitHub:** @zakusworo  
 **DOI:** 10.5281/zenodo.19653501
@@ -541,7 +541,7 @@ Total: ~120 KB of production-ready code with documentation.
 ## Appendix B: Letters of Support
 
 *(To be obtained from:)*
-- Politeknik Energi dan Pertambangan Bandung
+- Bandung, Indonesia
 - PT Pertamina Geothermal Energy
 - Indonesian Geothermal Association (Asosiasi Panas Bumi Indonesia)
 - University partners (ITB, UGM)

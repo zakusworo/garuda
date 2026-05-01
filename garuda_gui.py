@@ -239,7 +239,7 @@ with st.sidebar:
     )
 
     st.divider()
-    st.caption("[GitHub](https://github.com/zakusworo/garuda) · Politeknik Energi dan Pertambangan Bandung")
+    st.caption("[GitHub](https://github.com/zakusworo/garuda)")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
