@@ -871,11 +871,11 @@ elif page == "⚗️ Multiphase":
 
             with st.container(border=True):
                 if pc_type == "Brooks-Corey":
-                    pd = st.number_input("Entry pressure (Pa)", 1.0, 1e7, 1e5)
+                    p_entry = st.number_input("Entry pressure (Pa)", 1.0, 1e7, 1e5)
                     lam = st.number_input("λ", 0.1, 10.0, 2.0, key="bc_lam")
                     swr = st.number_input("Swr", 0.0, 0.99, 0.2, key="bc_swr")
                     snr = st.number_input("Snr", 0.0, 0.99, 0.0, key="bc_snr")
-                    pc_model = BrooksCoreyPc(pd, lam, swr, snr)
+                    pc_model = BrooksCoreyPc(p_entry, lam, swr, snr)
                 else:
                     p0 = st.number_input("P₀ (Pa)", 1.0, 1e7, 1e4)
                     n = st.number_input("n", 1.01, 10.0, 2.0, key="vg_pc_n")
