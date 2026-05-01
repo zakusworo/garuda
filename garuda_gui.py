@@ -154,7 +154,7 @@ elif page == "📐 Grid Builder":
 
             st.success(
                 f"Grid built: {nx}×{ny}×{nz} = **{grid.num_cells:,} cells**  |  "
-                f"Volume = **{grid.cell_volume * grid.num_cells:.3e} m³**"
+                f"Total volume = **{grid.cell_volumes.sum():.3e} m³**"
             )
 
             # Visualise cross-section for 2D/3D
@@ -191,7 +191,7 @@ elif page == "📐 Grid Builder":
                     "Cell": np.arange(grid.num_cells),
                     "Permeability (m²)": grid.permeability,
                     "Porosity": grid.porosity,
-                    "Volume (m³)": np.full(grid.num_cells, grid.cell_volume),
+                    "Volume (m³)": grid.cell_volumes,
                 }
             )
             st.dataframe(df, use_container_width=True)
