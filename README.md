@@ -380,7 +380,7 @@ Then open **🧊 3D Visualizer** from the sidebar.
 
 ### Example Output
 
-![3D Reservoir Visualizer — Temperature distribution with isothermal surfaces, orthogonal slices, well trajectory, and pressure drawdown](3d_reservoir_demo.png)
+![3D Reservoir Visualizer](assets/3d_reservoir_demo.png)
 
 > *3D temperature field (64–266 °C) with isothermal contour shells, X/Y/Z slice planes, production well trajectory, and pressure-drawdown field at 24 MPa max pressure.*
 
@@ -522,14 +522,9 @@ If you use GARUDA in your research, please cite:
 ## Acknowledgments
 
 - Inspired by the deprecated [PRESTO](https://github.com/padmec-reservoir/PRESTO) project
+- [Waiwera](https://waiwera.github.io/) — inspiration for source networks and geothermal simulation workflows
 - Built on NumPy, SciPy, and Numba
 - IAPWS-IF97 implementation for industrial-grade water/steam thermodynamics
-
----
-
-## License
-
-MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
