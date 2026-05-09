@@ -18,11 +18,15 @@
 ╚═══════════════════════════════════════════════════════════════╝
 ```
 
-**Acronym:** **G**eothermal **A**nd **R**eservoir **U**nderstanding + **D**ata-driven **A**nalytics  
+**Acronym:** **G**eothermal **A**nd **R**eservoir **U**nderstanding + **D**ata-driven **A**nalytics
 
-**GARUDA** is a modern, open-source reservoir simulator for **petroleum** and **geothermal** energy systems, with special focus on Indonesian volcanic geothermal resources and AI/ML integration.
+**GARUDA** is an open-source, pure-Python reservoir simulator for petroleum and
+geothermal energy systems. It targets the regime that's painful for existing
+tools — small-to-medium structured-grid models, scriptable workflows, and
+geothermal-leaning physics (IAPWS-IF97 water/steam, dual-porosity, source
+networks) — without the install or licensing overhead of commercial codes.
 
-> Named after **Garuda**, the mythical bird king of Indonesian mythology - representing speed, power, and vision in energy simulation.
+> Named after **Garuda**, the mythical bird king of Indonesian mythology.
 
 ---
 
@@ -46,13 +50,9 @@
 - 💧 **Relative permeability** — Corey, van Genuchten-Mualem, Linear, and Stone I models
 - 💧 **Capillary pressure** — Brooks-Corey and van Genuchten models
 - 🧊 **Region-based thermodynamics** — water (IF97 Region 1), steam (Region 2), supercritical, and saturation curve interpolation
-- 🌋 Indonesian geothermal reservoir templates (volcanic, high-T)
 
-### Petroleum Extensions
-- 🛢️ Single-phase oil/gas (currently) with extension points for black-oil/compositional
-- ⛽ Compositional modeling (planned)
-- 📊 History matching tools (planned)
-- 🎯 Well optimization (planned)
+### Petroleum
+- 🛢️ Single-phase oil/gas with hooks for black-oil / compositional extensions
 
 ### Interactive 3D Visualization
 - 🧊 **3D Reservoir Visualizer** — isothermal surfaces, cross-section slices, flow streamlines, well trajectories, pressure drawdown
@@ -80,12 +80,6 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install in development mode
 pip install -e ".[dev]"
-
-# Optional: ML capabilities
-pip install -e ".[ml]"
-
-# Optional: GPU acceleration
-pip install -e ".[gpu]"
 
 # Optional: HPC / Scalable Solvers (PETSc)
 pip install -e ".[petsc]"
@@ -405,16 +399,12 @@ garuda/
 │   │   ├── thermal.py           # Coupled non-isothermal flow
 │   │   ├── well_models.py       # BHP/rate-constrained well models
 │   │   ├── relative_permeability.py  # Corey, van Genuchten, Linear, Stone I
-│   │   └── capillary_pressure.py     # Brooks-Corey, van Genuchten
-│   ├── ml/                      # (Planned)
-│   │   ├── upscaling_cnn.py     # ML permeability upscaling
-│   │   └── surrogate_model.py   # Neural network emulator
-│   ├── agents/                  # (Planned)
-│   │   └── integration.py       # Multi-agent AI assistant
-│   └── utils/
-│       └── visualization.py     # Plotting utilities
+│   │   ├── capillary_pressure.py     # Brooks-Corey, van Genuchten
+│   │   └── multiphase.py        # Two-phase water/steam flow (geothermal)
+│   └── solvers/
+│       └── petsc_solver.py      # Optional PETSc backend (KSP, AMG, DMDA)
 ├── examples/
-├── tests/                       # 50+ unit & integration tests
+├── tests/                       # 560+ unit & integration tests
 ├── docs/
 └── pyproject.toml
 ```
@@ -442,16 +432,12 @@ garuda/
 - [x] Relative permeability — Corey, van Genuchten, Linear, Stone I
 - [x] Capillary pressure — Brooks-Corey, van Genuchten
 - [x] Region-based thermodynamics — IF97 Region 1/2, supercritical, saturation curve
-- [ ] Black oil model (petroleum)
-- [ ] History matching tools
-- [ ] TOUGH2 comparison benchmarks
 
-### Phase 3: AI/ML Integration
-- [ ] CNN for permeability upscaling
-- [ ] Neural surrogate models
-- [ ] Bayesian parameter inversion
-- [ ] RL for well optimization
-- [ ] Ollama LLM multi-agent assistant
+### Roadmap
+- [ ] Reference-data benchmark suite (IAPWS tables, analytical Darcy, TOUGH2 cases)
+- [ ] Black-oil / compositional petroleum model
+- [ ] History-matching utilities
+- [ ] PETSc SNES non-linear path (currently linear-only)
 
 ---
 
@@ -460,12 +446,9 @@ garuda/
 | Feature | GARUDA | TOUGH2 | MRST | tNavigator |
 |---------|--------|--------|------|------------|
 | **License** | MIT (Open) | Proprietary | GPL | Proprietary |
-| **Cost** | Free | $50k+ | Free | $100k+ |
 | **Language** | Python | Fortran | MATLAB | C++ |
 | **Geothermal** | ✅ Yes | ✅ Yes | ⚠️ Limited | ⚠️ Limited |
 | **Petroleum** | 🔄 Single-phase | ✅ Yes | ✅ Yes | ✅ Yes |
-| **AI/ML** | ✅ Planned | ❌ No | ⚠️ Basic | ⚠️ Basic |
-| **Indonesian Focus** | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Installation** | `pip install -e .` | Manual | MATLAB req. | Installer |
 
 ---
@@ -474,11 +457,10 @@ garuda/
 
 Contributions welcome! Areas needing help:
 
-1. ~~Test suite~~ ✓ — 550+ tests, 89% coverage
-2. **Multiphase flow solver** — Couple new rel-perm/pc models into TPFA
-3. **Black oil model** — Petroleum compositional simulation
-4. **ML integration** — Build surrogate models and upscaling CNN
-5. **Multi-agent AI assistant** — LLM-powered reservoir simulation agent
+1. **Reference-data benchmarks** — analytical Darcy / IAPWS reference tables / TOUGH2 cases
+2. **Multiphase flow solver** — couple new rel-perm/pc models into TPFA, improve Picard convergence
+3. **Black-oil / compositional model** — petroleum extension on the existing TPFA backbone
+4. **Documentation** — fill in the Sphinx user-guide pages with worked examples
 
 ### Development Setup
 
