@@ -195,10 +195,7 @@
 <span class="sd">            Heat flux across faces [W/m²]</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">num_faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_faces</span>
-
-        <span class="c1"># Convective heat flux: ρCpT·u</span>
-        <span class="c1"># Need face temperatures (upwind)</span>
+        <span class="c1"># Convective heat flux: ρCpT·u — face temperatures (upwind)</span>
         <span class="n">T_face</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interpolate_temperature_to_faces</span><span class="p">()</span>
         <span class="n">rho_face</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluid</span><span class="o">.</span><span class="n">density</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pressure</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">T_face</span><span class="p">)</span>
         <span class="n">Cp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluid</span><span class="o">.</span><span class="n">cp</span>
@@ -308,10 +305,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">num_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span>
 
-        <span class="c1"># Current energy accumulation</span>
-        <span class="n">energy_accum_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_energy_accumulation</span><span class="p">()</span>
-
-        <span class="c1"># Previous energy accumulation</span>
+        <span class="c1"># Previous-step energy accumulation, used as the RHS time-derivative term.</span>
         <span class="n">rhoCp_bulk_prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rock</span><span class="o">.</span><span class="n">heat_capacity_bulk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fluid</span><span class="o">.</span><span class="n">cp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fluid</span><span class="o">.</span><span class="n">density</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p_prev</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_prev</span><span class="p">))</span>
         <span class="n">energy_accum_old</span> <span class="o">=</span> <span class="n">rhoCp_bulk_prev</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">T_prev</span>
 

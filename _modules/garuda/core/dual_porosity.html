@@ -135,11 +135,9 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
-
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;TransferModel&quot;</span><span class="p">,</span>
@@ -288,7 +286,7 @@
         <span class="n">matrix_permeability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">fracture_porosity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">fracture_permeability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">fracture_spacing</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">fracture_spacing</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
         <span class="n">geometry</span><span class="p">:</span> <span class="n">BlockGeometry</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">tortuosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -650,7 +648,7 @@
     <span class="n">single_permeability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">fracture_intensity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">aperture</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-    <span class="n">matrix_block_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="n">matrix_block_size</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DualPorosityParams</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert measured single-porosity properties into an equivalent</span>
@@ -703,7 +701,7 @@
     <span class="n">phi_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">k_m</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">k_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Upscaling dual-porosity properties to an equivalent single-porosity</span>
 <span class="sd">    continuum using arithmetic averaging for porosity and a harmonic average</span>
