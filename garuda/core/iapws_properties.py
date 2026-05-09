@@ -32,7 +32,6 @@ class WaterSteamProperties:
         """
         p_sat = self.saturation_pressure(T)
         Tc = 647.096
-        Pc = 22.064
 
         if T < Tc:
             if p <= p_sat:

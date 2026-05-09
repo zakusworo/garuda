@@ -41,11 +41,9 @@ from __future__ import annotations
 import enum
 import math
 from dataclasses import dataclass
-from typing import Literal, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
-
 
 __all__ = [
     "TransferModel",
@@ -181,7 +179,7 @@ class DualPorosityModel:
         matrix_permeability: float,
         fracture_porosity: float,
         fracture_permeability: float,
-        fracture_spacing: Tuple[float, float, float],
+        fracture_spacing: tuple[float, float, float],
         geometry: BlockGeometry | None = None,
         tortuosity: float = 1.0,
     ) -> None:
@@ -511,7 +509,7 @@ def convert_single_to_dual(
     single_permeability: float,
     fracture_intensity: float,
     aperture: float,
-    matrix_block_size: Tuple[float, float, float],
+    matrix_block_size: tuple[float, float, float],
 ) -> DualPorosityParams:
     """
     Convert measured single-porosity properties into an equivalent
@@ -564,7 +562,7 @@ def convert_dual_to_single(
     phi_f: float,
     k_m: float,
     k_f: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Upscaling dual-porosity properties to an equivalent single-porosity
     continuum using arithmetic averaging for porosity and a harmonic average

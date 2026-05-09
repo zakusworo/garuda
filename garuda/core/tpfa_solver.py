@@ -93,9 +93,6 @@ class TPFASolver:
             Face transmissibilities [m³·s/kg]
 
         """
-        num_faces = self.grid.num_faces
-        T = np.zeros(num_faces)
-
         # Get permeability (assume isotropic for now)
         if hasattr(self.grid, "permeability"):
             perm = self.grid.permeability
@@ -359,7 +356,6 @@ class TPFASolver:
 
         """
         num_faces = self.grid.num_faces
-        num_cells = self.grid.num_cells
 
         # Pressure at faces (from connected cells)
         p_face = np.zeros(num_faces)

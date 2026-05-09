@@ -94,10 +94,7 @@ class ThermalFlow:
             Heat flux across faces [W/m²]
 
         """
-        num_faces = self.grid.num_faces
-
-        # Convective heat flux: ρCpT·u
-        # Need face temperatures (upwind)
+        # Convective heat flux: ρCpT·u — face temperatures (upwind)
         T_face = self._interpolate_temperature_to_faces()
         rho_face = self.fluid.density(self.pressure.mean(), T_face)
         Cp = self.fluid.cp
@@ -204,10 +201,7 @@ class ThermalFlow:
         """
         num_cells = self.grid.num_cells
 
-        # Current energy accumulation
-        energy_accum_new = self.compute_energy_accumulation()
-
-        # Previous energy accumulation
+        # Previous-step energy accumulation, used as the RHS time-derivative term.
         rhoCp_bulk_prev = self.rock.heat_capacity_bulk(self.fluid.cp, self.fluid.density(self.p_prev, self.T_prev))
         energy_accum_old = rhoCp_bulk_prev * self.T_prev
 

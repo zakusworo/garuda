@@ -45,6 +45,11 @@ dependencies = [
     "pandas>=2.0.0",
     "matplotlib>=3.7.0",
     "numba>=0.57.0",
+    # `iapws` is used as the cross-validation oracle for our IAPWS-97
+    # implementation (see tests/test_benchmarks.py::TestIapwsCrossValidation).
+    # Adding it as a runtime dep also lets advanced users import it directly
+    # via `from iapws import IAPWS97` for region-3 / supercritical work.
+    "iapws>=1.5",
 ]
 
 [project.optional-dependencies]
@@ -85,7 +90,7 @@ Repository = "https://github.com/zakusworo/garuda"
 Issues = "https://github.com/zakusworo/garuda/issues"
 
 [tool.setuptools]
-packages = ["garuda", "garuda.core", "garuda.physics", "garuda.solvers"]
+packages = ["garuda", "garuda.core", "garuda.physics", "garuda.solvers", "garuda.gui"]
 
 [tool.setuptools_scm]
 write_to = "garuda/_version.py"
@@ -104,9 +109,23 @@ target-version = ['py310', 'py311', 'py312']
 include = '\.pyi?$'
 
 [tool.ruff]
-lint.select = ["E", "F", "W", "I", "N", "D", "UP"]
-lint.ignore = ["D100", "D104", "D203", "D213"]
+# Rule selection rationale:
+#   E/W  pycodestyle    — real style errors
+#   F    pyflakes       — undefined names, unused imports (catches real bugs)
+#   I    isort          — import ordering (auto-fixable)
+#   UP   pyupgrade      — flag obsolete Python idioms (auto-fixable)
+# We deliberately do NOT enable:
+#   N    naming         — scientific code uses T_sat / J_dummy / R_specific etc.
+#   D    pydocstyle     — full docstring coverage is out of scope
+lint.select = ["E", "F", "W", "I", "UP"]
 line-length = 120
+
+[tool.ruff.lint.per-file-ignores]
+# Demos and the GUI use long inline HTML/CSS strings and pull in a wide
+# import surface for convenience.
+"demo*.py" = ["E501", "F401"]
+"garuda_gui.py" = ["E501", "F401"]
+"garuda/gui/*.py" = ["E501", "F401", "F841"]
 
 [tool.mypy]
 python_version = "3.10"

@@ -18,14 +18,12 @@ a ``WellManager`` can be synchronised into a ``SourceNetwork`` seamlessly.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 import numpy as np
 
 # Import existing well infrastructure for interoperability
 from garuda.physics.well_models import WellManager
-
 
 # ---------------------------------------------------------------------------
 # SourceNode

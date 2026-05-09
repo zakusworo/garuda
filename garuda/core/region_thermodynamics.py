@@ -23,7 +23,6 @@ import numpy as np
 
 from garuda.core.iapws_properties import WaterSteamProperties
 
-
 __all__ = [
     "ThermodynamicsRegion",
     "WaterRegion",

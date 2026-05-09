@@ -42,10 +42,27 @@ Author: Zulfikar Aji Kusworo
 License: MIT
 """
 
+from garuda.core.dual_porosity import BlockGeometry, DualPorosityModel, DualPorosityParams, TransferModel
 from garuda.core.fluid_properties import FluidProperties
 from garuda.core.grid import Grid, StructuredGrid
 from garuda.core.iapws_properties import IAPWSFluidProperties, WaterSteamProperties
+from garuda.core.region_thermodynamics import (
+    FluidThermoState,
+    RegionThermodynamics,
+    SaturationCurve,
+    SteamRegion,
+    SupercriticalRegion,
+    ThermodynamicsRegion,
+    WaterRegion,
+)
 from garuda.core.rock_properties import RockProperties
+from garuda.core.source_network import (
+    Reinjector,
+    Separator,
+    SourceGroup,
+    SourceNetwork,
+    SourceNode,
+)
 from garuda.core.tpfa_solver import TPFASolver
 from garuda.physics.capillary_pressure import BrooksCoreyPc, CapillaryPressureModel, VanGenuchtenPc
 from garuda.physics.multiphase import MultiphaseFlow, MultiphaseState
@@ -59,23 +76,6 @@ from garuda.physics.relative_permeability import (
 from garuda.physics.single_phase import SinglePhaseFlow
 from garuda.physics.thermal import ThermalFlow
 from garuda.physics.well_models import PeacemanWell, WellManager, WellOperatingConditions, WellParameters
-from garuda.core.dual_porosity import BlockGeometry, DualPorosityModel, DualPorosityParams, TransferModel
-from garuda.core.region_thermodynamics import (
-    FluidThermoState,
-    RegionThermodynamics,
-    SaturationCurve,
-    SupercriticalRegion,
-    SteamRegion,
-    ThermodynamicsRegion,
-    WaterRegion,
-)
-from garuda.core.source_network import (
-    Reinjector,
-    Separator,
-    SourceGroup,
-    SourceNetwork,
-    SourceNode,
-)
 
 __version__ = "0.2.0"
 
@@ -129,7 +129,10 @@ __all__ = [
 # real `HAS_PETSC` flag from petsc_solver instead.
 try:
     from garuda.solvers.petsc_solver import HAS_PETSC as has_petsc
-    from garuda.solvers.petsc_solver import PETScDMSolver, PETScTPFASolver
+    from garuda.solvers.petsc_solver import (  # noqa: F401  (re-exported via __all__)
+        PETScDMSolver,
+        PETScTPFASolver,
+    )
 
     __all__.extend(["PETScTPFASolver", "PETScDMSolver", "has_petsc"])
 except ImportError:
