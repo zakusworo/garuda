@@ -4,8 +4,8 @@
 
 [![CI](https://github.com/zakusworo/garuda/actions/workflows/ci.yml/badge.svg)](https://github.com/zakusworo/garuda/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests: 550+](https://img.shields.io/badge/tests-550%2B%20passing-brightgreen.svg)](https://github.com/zakusworo/garuda/actions/workflows/ci.yml)
-[![Coverage: 89%](https://img.shields.io/badge/coverage-89%25-brightgreen.svg)](./htmlcov)
+[![Tests: 599](https://img.shields.io/badge/tests-599%20passing-brightgreen.svg)](https://github.com/zakusworo/garuda/actions/workflows/ci.yml)
+[![IAPWS-validated](https://img.shields.io/badge/IAPWS--IF97-cross--validated-blue.svg)](./tests/test_benchmarks.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Made with ❤️ in Indonesia](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F%20Indonesia-red)](https://indonesia.id)
 
@@ -35,12 +35,12 @@ networks) — without the install or licensing overhead of commercial codes.
 ### Core Capabilities
 - ✅ **Single-phase flow** with TPFA (Two-Point Flux Approximation)
 - ✅ **Non-isothermal flow** for geothermal applications
-- ✅ **IAPWS-IF97** thermophysical properties — saturation pressure, density, viscosity, enthalpy, specific heat, thermal conductivity
+- ✅ **IAPWS-IF97** thermophysical properties — saturation pressure, density, viscosity, enthalpy, specific heat, thermal conductivity. **Cross-validated** against the independent [`iapws`](https://pypi.org/project/iapws/) reference package.
 - ✅ **Well models** — pressure-constrained (BHP) or rate-constrained wells with automatic switching
-- ✅ **Structured grids** (1D, 2D, 3D Cartesian) with heterogeneous permeability and porosity
-- ✅ **Numba-accelerated** solvers for performance
+- ✅ **Structured grids** (1D, 2D, 3D Cartesian) with heterogeneous permeability and porosity, gravity-aware TPFA
+- ✅ **Numba-accelerated** solvers for performance on uniform 3D grids; per-face fall-back for heterogeneous spacing
 - ✅ **Pure Python** implementation (no C++ compilation needed)
-- ✅ **550+ unit & integration tests** with pytest and coverage reporting
+- ✅ **599 unit, integration & reference-data tests** — including a benchmark suite against published IAPWS-IF97 / Wagner-Pruss / analytical Darcy values
 
 ### Geothermal Extensions
 - 🌡️ Temperature-dependent fluid properties (IAPWS-IF97 water/steam)
@@ -401,10 +401,21 @@ garuda/
 │   │   ├── relative_permeability.py  # Corey, van Genuchten, Linear, Stone I
 │   │   ├── capillary_pressure.py     # Brooks-Corey, van Genuchten
 │   │   └── multiphase.py        # Two-phase water/steam flow (geothermal)
-│   └── solvers/
-│       └── petsc_solver.py      # Optional PETSc backend (KSP, AMG, DMDA)
+│   ├── solvers/
+│   │   └── petsc_solver.py      # Optional PETSc backend (KSP, AMG, DMDA)
+│   └── gui/                     # Streamlit panels (one module per page)
+│       ├── home.py              # Overview / status cards
+│       ├── grid_builder.py      # 1D/2D/3D structured grid builder
+│       ├── single_phase.py      # TPFA pressure solve UI
+│       ├── well_model.py        # Peaceman well configurator
+│       ├── iapws.py             # IAPWS-97 fluid property explorer
+│       ├── multiphase.py        # rel-perm + capillary pressure plots
+│       ├── dual_porosity.py     # MINC shape-factor interactive
+│       ├── source_network.py    # Source / separator / reinjector graph
+│       ├── thermodynamics.py    # Region EOS + saturation curve
+│       └── visualizer_3d.py     # PyVista off-screen 3D renders
 ├── examples/
-├── tests/                       # 560+ unit & integration tests
+├── tests/                       # 599 tests inc. tests/test_benchmarks.py
 ├── docs/
 └── pyproject.toml
 ```
@@ -432,12 +443,15 @@ garuda/
 - [x] Relative permeability — Corey, van Genuchten, Linear, Stone I
 - [x] Capillary pressure — Brooks-Corey, van Genuchten
 - [x] Region-based thermodynamics — IF97 Region 1/2, supercritical, saturation curve
+- [x] Reference-data benchmarks (IAPWS-IF97 tables, analytical Darcy, gravity assembly, rel-perm/Pc limits) — see `tests/test_benchmarks.py`
+- [x] Cross-validation against the independent `iapws` PyPI package
+- [x] Modular Streamlit GUI split into `garuda.gui` (one module per page)
 
 ### Roadmap
-- [ ] Reference-data benchmark suite (IAPWS tables, analytical Darcy, TOUGH2 cases)
 - [ ] Black-oil / compositional petroleum model
 - [ ] History-matching utilities
 - [ ] PETSc SNES non-linear path (currently linear-only)
+- [ ] Additional benchmark cases against TOUGH2 / Waiwera reference solutions
 
 ---
 
@@ -457,10 +471,11 @@ garuda/
 
 Contributions welcome! Areas needing help:
 
-1. **Reference-data benchmarks** — analytical Darcy / IAPWS reference tables / TOUGH2 cases
+1. **More benchmarks** — extend `tests/test_benchmarks.py` with TOUGH2 / Waiwera reference cases (e.g. SPE10, Vinsome-Westerveld)
 2. **Multiphase flow solver** — couple new rel-perm/pc models into TPFA, improve Picard convergence
 3. **Black-oil / compositional model** — petroleum extension on the existing TPFA backbone
 4. **Documentation** — fill in the Sphinx user-guide pages with worked examples
+5. **Type annotations** — gradually annotate public modules so mypy can be flipped from advisory to fatal in CI
 
 ### Development Setup
 
@@ -505,8 +520,8 @@ If you use GARUDA in your research, please cite:
 
 - Inspired by the deprecated [PRESTO](https://github.com/padmec-reservoir/PRESTO) project
 - [Waiwera](https://waiwera.github.io/) — inspiration for source networks and geothermal simulation workflows
+- [`iapws`](https://pypi.org/project/iapws/) by Juan José Gómez — used as the reference oracle for cross-validating GARUDA's IAPWS-IF97 implementation
 - Built on NumPy, SciPy, and Numba
-- IAPWS-IF97 implementation for industrial-grade water/steam thermodynamics
 
 ---
 

@@ -165,7 +165,7 @@ with st.sidebar:
         """
         <div style="font-size: 0.75rem; color: #64748b;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
-                <span>Tests</span><span style="color: #22c55e; font-weight: 600;">560 passed</span>
+                <span>Tests</span><span style="color: #22c55e; font-weight: 600;">599 passed</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
                 <span>Version</span><span style="color: #f59e0b; font-weight: 600;">v0.2.0</span>
