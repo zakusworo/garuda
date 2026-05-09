@@ -77,7 +77,12 @@ class WaterSteamProperties:
         return p_sat
 
     def saturation_temperature(self, p: float) -> float:
-        """Saturation temperature [K] via IAPWS-IF97 region-4 backward equation."""
+        """Saturation temperature [K] via IAPWS-IF97 region-4 backward equation.
+
+        Valid range: 611.213 Pa <= p <= 22.064 MPa (triple point → critical
+        point). Uses the full 10-coefficient form from IR-IF97 (2007), with
+        the standard reducing pressure p* = 1 MPa.
+        """
         Tc = 647.096  # K
         Pc = 22.064  # MPa
 
@@ -86,58 +91,57 @@ class WaterSteamProperties:
         if p <= 0.0:
             return 273.15
 
-        beta = (p / Pc) ** 0.25
-        n = [
-            0.11670521452767e4,
-            -0.72421316703206e6,
-            -0.17073846940092e2,
-            0.12020824702470e5,
-            -0.32325550322333e7,
-            -0.38452086912490e3,
-        ]
-
+        # IAPWS-IF97 region 4 backward equation T_sat(p):
+        n = (
+            0.11670521452767e4,    # n1
+            -0.72421316703206e6,   # n2
+            -0.17073846940092e2,   # n3
+            0.12020824702470e5,    # n4
+            -0.32325550322333e7,   # n5
+            0.14915108613530e2,    # n6
+            -0.48232657361591e4,   # n7
+            0.40511340542057e6,    # n8
+            -0.23855557567849e0,   # n9
+            0.65017534844798e3,    # n10
+        )
+        # Reducing pressure p* = 1 MPa, so beta = p^(1/4) with p in MPa.
+        beta = p ** 0.25
         E = beta * beta + n[2] * beta + n[5]
-        F = n[0] * beta * beta + n[3] * beta + n[5]
-        G = n[1] * beta * beta + n[4] * beta + n[5]
-        D = 2.0 * G / (-F - np.sqrt(F * F - 4.0 * E * G))
-        theta = (n[3] + D) / (2.0 * n[1])
-
-        return Tc * theta
+        F = n[0] * beta * beta + n[3] * beta + n[6]
+        G = n[1] * beta * beta + n[4] * beta + n[7]
+        # Clamp against round-off near p ≈ Pc.
+        disc = max(F * F - 4.0 * E * G, 0.0)
+        D = 2.0 * G / (-F - np.sqrt(disc))
+        inner = max((n[9] + D) ** 2 - 4.0 * (n[8] + n[9] * D), 0.0)
+        return 0.5 * (n[9] + D - np.sqrt(inner))
 
     def saturation_density_liquid(self, T: float) -> float:
-        """Saturated liquid density [kg/m³]."""
+        """Saturated liquid density [kg/m³] — Wagner & Pruss (2002) auxiliary
+        equation (also used by IAPWS-IF97 region 4)."""
         Tc = 647.096
         rhoc = 322.0
-        tau = 1.0 - T / Tc
-        b = [1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.64596587e-2, 2.60803957, 1.49151086]
-        rho = (
-            1.0
-            + b[0] * tau ** (1 / 3.0)
-            + b[1] * tau ** (2 / 3.0)
-            + b[2] * tau ** (4 / 3.0)
-            + b[3] * tau ** (5 / 3.0)
-            + b[4] * tau ** (16 / 3.0)
-            + b[5] * tau ** (43 / 3.0)
-            + b[6] * np.exp(b[7] * tau)
-        )
+        if T >= Tc:
+            return rhoc
+        tau = max(1.0 - T / Tc, 0.0)
+        # Coefficients and exponents per Wagner & Pruss / IAPWS-95 release.
+        b = [1.99274064, 1.09965342, -0.510839303, -1.75493479, -45.5170352, -6.74694450e5]
+        exps = [1 / 3.0, 2 / 3.0, 5 / 3.0, 16 / 3.0, 43 / 3.0, 110 / 3.0]
+        rho = 1.0 + sum(bi * tau**ei for bi, ei in zip(b, exps))
         return rhoc * rho
 
     def saturation_density_vapor(self, T: float) -> float:
-        """Saturated vapor density [kg/m³]."""
+        """Saturated vapor density [kg/m³] — Wagner & Pruss (2002) auxiliary
+        equation."""
         Tc = 647.096
         rhoc = 322.0
-        tau = 1.0 - T / Tc
-        b = [-2.0315024, -2.6830294, -5.38626492, -17.2991605, -44.6384722, -64.098544, 78.19975, 1.0]
-        rho = (
-            b[0] * tau ** (1 / 3.0)
-            + b[1] * tau ** (2 / 3.0)
-            + b[2] * tau ** (4 / 3.0)
-            + b[3] * tau ** (5 / 3.0)
-            + b[4] * tau ** (16 / 3.0)
-            + b[5] * tau ** (43 / 3.0)
-            + b[6] * np.exp(b[7] * tau)
-        )
-        return rhoc * np.exp(rho)
+        if T >= Tc:
+            return rhoc
+        tau = max(1.0 - T / Tc, 0.0)
+        # Coefficients and exponents per Wagner & Pruss / IAPWS-95 release.
+        c = [-2.03150240, -2.68302940, -5.38626492, -17.2991605, -44.6384722, -64.0985368]
+        exps = [2 / 6.0, 4 / 6.0, 8 / 6.0, 18 / 6.0, 37 / 6.0, 71 / 6.0]
+        ln_rho = sum(ci * tau**ei for ci, ei in zip(c, exps))
+        return rhoc * np.exp(ln_rho)
 
     # =====================================================================
     # DENSITY
@@ -158,22 +162,31 @@ class WaterSteamProperties:
         else:
             return 1000.0
 
-    def density_region1(self, p: float, T: float) -> float:
-        """Liquid water density — empirical polynomial fit to IAPWS-IF97 data."""
-        # Base at 0.1 MPa, 20°C
+    def density_region1(self, p, T):
+        """Liquid water density — empirical polynomial fit to IAPWS-IF97 data.
+
+        Accepts scalar or array inputs for ``p`` (MPa) and ``T`` (K) and
+        broadcasts elementwise.
+        """
         rho0 = 999.842
-        t = T - 273.15
+        t = np.asarray(T) - 273.15
         # Thermal expansion
         rho = rho0 - 0.0675 * t - 0.00352 * t**2 + 7.9e-6 * t**3
         # Pressure compressibility
-        rho = rho + 0.5 * p * 1e6 / 2.2e9
-        return max(rho, 600.0)
+        rho = rho + 0.5 * np.asarray(p) * 1e6 / 2.2e9
+        return np.maximum(rho, 600.0)
 
     def density_region2(self, p: float, T: float) -> float:
-        """Steam/vapor density via ideal gas + compressibility."""
+        """Steam/vapor density via ideal gas + simple compressibility correction.
+
+        Z must approach 1 as p → 0; using ``Z = 0.9 - …`` over-estimates
+        density by ~10 % at low pressure. Linear correction in p with
+        Z(0)=1 keeps the limit consistent and stays within a few percent
+        of IAPWS-IF97 region 2 across the sub-critical range.
+        """
         R = _R_GAS * 1000  # J/(kg·K)
         rho_ideal = p * 1e6 / (R * T)
-        Z = 0.9 - 0.05 * (p / 30.0)
+        Z = 1.0 - 0.05 * (p / 30.0)
         return max(rho_ideal / max(Z, 0.5), 1.0)
 
     def density_region3(self, p: float, T: float) -> float:

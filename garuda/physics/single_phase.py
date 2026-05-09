@@ -54,22 +54,35 @@ class SinglePhaseFlow:
             self.prev_accumulation = np.zeros(num_cells)
 
     def compute_accumulation(self) -> np.ndarray:
-        """Compute accumulation term: ∂(φρ)/∂t
+        """Mass per unit volume at the current state: φ·ρ.
+
+        Returned by itself (not divided by dt). The time-derivative
+        ∂(φρ)/∂t is formed by the caller as
+        ``(accumulation_new − accumulation_old) / dt``; see
+        :meth:`step_implicit`.
 
         Returns
         -------
         accumulation : ndarray
-            Mass accumulation rate [kg/(m³·s)]
+            Mass density [kg/m³] per cell at the current pressure /
+            temperature.
 
         """
         phi = self.rock.porosity
         rho = self.fluid.density(self.pressure, self.temperature)
-
-        # For implicit time stepping, this is evaluated at new time level
         return phi * rho
 
     def compute_flux(self, solver) -> np.ndarray:
-        """Compute total flux for each cell.
+        """Compute net mass outflow per cell from TPFA face fluxes.
+
+        Sign convention: ``cell_flux[i] = Σ_f q_f`` summed with the outward
+        orientation, i.e. positive value means net mass leaving the cell.
+        This is consistent with the residual
+
+            V * ∂(φρ)/∂t + cell_flux − source = 0
+
+        used in :meth:`step_implicit` and works in 1D, 2D, and 3D via the
+        shared face_cells map.
 
         Parameters
         ----------
@@ -79,17 +92,22 @@ class SinglePhaseFlow:
         Returns
         -------
         flux : ndarray
-            Net flux for each cell [kg/s]
+            Net mass outflow per cell [kg/s]
 
         """
         flux_data = solver.compute_flux(self.pressure)
-
-        # Accumulate face fluxes to cells
         cell_flux = np.zeros(self.grid.num_cells)
 
-        if self.grid.dim == 1:
-            for i in range(self.grid.num_cells):
-                cell_flux[i] = flux_data.flux[i] - flux_data.flux[i + 1]
+        # face flux is oriented L → R (compute_flux convention). For cell L
+        # this is an outflow (+); for cell R it is an inflow (−).
+        face_cells = self.grid.face_cells
+        for f in range(self.grid.num_faces):
+            cL, cR = int(face_cells[f, 0]), int(face_cells[f, 1])
+            q = flux_data.flux[f]
+            if cL >= 0:
+                cell_flux[cL] += q
+            if cR >= 0:
+                cell_flux[cR] -= q
 
         return cell_flux
 

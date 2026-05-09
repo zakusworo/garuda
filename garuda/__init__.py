@@ -123,16 +123,17 @@ __all__ = [
     "__version__",
 ]
 
-# Optional PETSc solver backend
-has_petsc = False
-
+# Optional PETSc solver backend. The petsc_solver module imports its solver
+# classes unconditionally and only guards `from petsc4py import PETSc`, so
+# importing the module is not a reliable availability check. Re-export the
+# real `HAS_PETSC` flag from petsc_solver instead.
 try:
+    from garuda.solvers.petsc_solver import HAS_PETSC as has_petsc
     from garuda.solvers.petsc_solver import PETScDMSolver, PETScTPFASolver
 
-    has_petsc = True
     __all__.extend(["PETScTPFASolver", "PETScDMSolver", "has_petsc"])
 except ImportError:
-    pass
+    has_petsc = False
 
 __author__ = "Zulfikar Aji Kusworo"
 __email__ = "greataji13@gmail.com"

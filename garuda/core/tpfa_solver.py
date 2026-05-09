@@ -106,14 +106,56 @@ class TPFASolver:
         else:
             k = np.ones(self.grid.num_cells)
 
-        # Compute transmissibilities for each face direction
-        if self.grid.dim == 1:
-            T = self._compute_1d_transmissibilities(k)
-        elif self.grid.dim == 2:
-            T = self._compute_2d_transmissibilities(k)
-        else:
-            T = self._compute_3d_transmissibilities(k)
+        # If the grid is uniformly spaced and 3D, use the numba-accelerated
+        # path for speed. Otherwise fall back to a generic face-based loop
+        # that handles heterogeneous spacing correctly via face_areas and
+        # cell-to-face distances.
+        if self.grid.dim == 3 and self._is_uniform_spacing():
+            return self._compute_3d_transmissibilities(k)
+        return self._compute_transmissibilities_generic(k)
 
+    def _is_uniform_spacing(self) -> bool:
+        """True if all dx/dy/dz spacings are constant."""
+        for spacing in (getattr(self.grid, "dx", None),
+                        getattr(self.grid, "dy", None),
+                        getattr(self.grid, "dz", None)):
+            if spacing is None:
+                continue
+            arr = np.asarray(spacing)
+            if arr.ndim == 0:
+                continue
+            if arr.size > 1 and not np.allclose(arr, arr[0]):
+                return False
+        return True
+
+    def _compute_transmissibilities_generic(self, k: np.ndarray) -> np.ndarray:
+        """Generic face-based transmissibility for any dim and any spacing.
+
+        For each face f with cells (cL, cR):
+            T_f = A_f / (d_L / k_L + d_R / k_R) / mu      (interior)
+            T_f = k_b * A_f / d_b / mu                    (boundary)
+        where d_L, d_R, d_b are the cell-centroid → face-centroid distances
+        — these collapse to dx/2 on a uniform grid and stay correct on
+        heterogeneous grids without averaging.
+        """
+        T = np.zeros(self.grid.num_faces)
+        for f in range(self.grid.num_faces):
+            cL, cR = int(self.grid.face_cells[f, 0]), int(self.grid.face_cells[f, 1])
+            A = float(self.grid.face_areas[f]) if self.grid.face_areas.size else 1.0
+            fc = self.grid.face_centroids[f]
+            if cL >= 0 and cR >= 0:
+                dL = float(np.linalg.norm(fc - self.grid.cell_centroids[cL]))
+                dR = float(np.linalg.norm(fc - self.grid.cell_centroids[cR]))
+                if dL > 0 and dR > 0:
+                    T[f] = A / (dL / k[cL] + dR / k[cR]) / self.mu
+            elif cL >= 0:
+                dL = float(np.linalg.norm(fc - self.grid.cell_centroids[cL]))
+                if dL > 0:
+                    T[f] = k[cL] * A / dL / self.mu
+            elif cR >= 0:
+                dR = float(np.linalg.norm(fc - self.grid.cell_centroids[cR]))
+                if dR > 0:
+                    T[f] = k[cR] * A / dR / self.mu
         return T
 
     def _compute_1d_transmissibilities(self, k: np.ndarray) -> np.ndarray:
@@ -253,11 +295,12 @@ class TPFASolver:
                         dR = dx / 2
                         T[face_idx] = 2 * A / (dL / k[cell_L] + dR / k[cell_R]) / mu
 
-        # Y-faces
+        # Y-faces — Grid._generate_faces lays these out i-fastest, then iy,
+        # then iz, so the global index is num_faces_x + iz*nx*(ny+1) + iy*nx + ix.
         for iz in prange(nz):
             for iy in range(ny + 1):
                 for ix in range(nx):
-                    face_idx = num_faces_x + iz * nx * (ny + 1) + ix * (ny + 1) + iy
+                    face_idx = num_faces_x + iz * nx * (ny + 1) + iy * nx + ix
                     A = dx * dz
 
                     if iy == 0:
@@ -321,46 +364,28 @@ class TPFASolver:
         # Pressure at faces (from connected cells)
         p_face = np.zeros(num_faces)
 
-        # Gravity term (elevation difference)
+        # Elevation *difference* z_R - z_L for the gravity term (NOT the
+        # absolute z of the face). Boundary faces leave dz as 0 so they
+        # contribute no spurious gravity-driven flux.
         dz = np.zeros(num_faces)
-
-        # Compute pressure differences using face_cells connectivity
-        for f in range(num_faces):
-            cell_L, cell_R = self.grid.face_cells[f]
-
-            if cell_L >= 0 and cell_R >= 0:
-                # Interior face: average of two cells
-                p_face[f] = (pressure[cell_L] + pressure[cell_R]) / 2
-                # Elevation difference (using z-coordinate of centroids)
-                dz[f] = self.grid.face_centroids[f, 2]  # z-coordinate of face
-
-            elif cell_L >= 0:
-                # Boundary face with only left cell
-                p_face[f] = pressure[cell_L]
-                dz[f] = self.grid.face_centroids[f, 2]
-
-            elif cell_R >= 0:
-                # Boundary face with only right cell
-                p_face[f] = pressure[cell_R]
-                dz[f] = self.grid.face_centroids[f, 2]
-
-        # Compute pressure gradient across each face
         dp = np.zeros(num_faces)
+
         for f in range(num_faces):
             cell_L, cell_R = self.grid.face_cells[f]
 
             if cell_L >= 0 and cell_R >= 0:
-                # Interior: p_R - p_L
+                p_face[f] = (pressure[cell_L] + pressure[cell_R]) / 2
                 dp[f] = pressure[cell_R] - pressure[cell_L]
+                dz[f] = self.grid.cell_centroids[cell_R, 2] - self.grid.cell_centroids[cell_L, 2]
             elif cell_L >= 0:
-                # Boundary: extrapolate from cell_L
-                dp[f] = 0  # Will be handled by BC
+                p_face[f] = pressure[cell_L]
+                # Boundary face: dp/dz left at 0; use build_matrix BC handling
+                # for the actual driven flux.
             elif cell_R >= 0:
-                # Boundary: extrapolate from cell_R
-                dp[f] = 0
+                p_face[f] = pressure[cell_R]
 
-        # Flux = -T * (dp + rho * g * dz)
-        # Note: dz here is the elevation change in the gravity term
+        # Flux convention matches build_matrix:
+        #   q_LR = T * (p_L - p_R + rho*g*(z_L - z_R)) = -T * (dp + rho*g*dz)
         gravity_term = self.rho * self.g * dz
         flux = -self.transmissibilities * (dp + gravity_term)
 
@@ -395,9 +420,14 @@ class TPFASolver:
         source_terms : ndarray
             Source/sink terms [kg/s] (positive = injection)
         bc_type : str
-            Boundary condition type: 'dirichlet', 'neumann', or 'mixed'
+            Boundary condition type: 'dirichlet' (specified pressure) or
+            'neumann' (specified mass flux into cell).
         bc_values : ndarray, optional
-            Boundary condition values
+            Boundary condition values. Two layouts are accepted:
+            - length 2: ``[low, high]`` — applied to all "−" / "+" boundaries
+              (legacy behaviour, kept for backward compatibility);
+            - length 6: ``[-x, +x, -y, +y, -z, +z]`` — independent value per
+              axis side, picked from the face's outward normal.
 
         Returns
         -------
@@ -408,6 +438,9 @@ class TPFASolver:
 
         """
         num_cells = self.grid.num_cells
+
+        if bc_type not in ("dirichlet", "neumann"):
+            raise ValueError(f"Unsupported bc_type {bc_type!r}; expected 'dirichlet' or 'neumann'")
 
         # Build sparse matrix
         A = lil_matrix((num_cells, num_cells))
@@ -442,32 +475,42 @@ class TPFASolver:
                 A[cell_R, cell_L] -= T_f
                 b[cell_R] -= T_f * self.rho * self.g * dz
 
-            elif cell_L >= 0:
-                # Boundary face with cell on left
-                if bc_type == "dirichlet" and bc_values is not None:
-                    # Dirichlet BC: use boundary pressure
-                    # For boundary faces, we need to determine which BC value to use
-                    # Simplified: use first value for all left/bottom boundaries, second for right/top
-                    if np.any(normal < 0):  # Left/bottom/bottom boundary
-                        p_bc = bc_values[0] if len(bc_values) > 0 else 0
-                    else:  # Right/top/top boundary
-                        p_bc = bc_values[1] if len(bc_values) > 1 else bc_values[0]
-
-                    A[cell_L, cell_L] += T_f
-                    b[cell_L] += T_f * p_bc
-
-            elif cell_R >= 0:
-                # Boundary face with cell on right
-                if bc_type == "dirichlet" and bc_values is not None:
-                    if np.any(normal < 0):
-                        p_bc = bc_values[0] if len(bc_values) > 0 else 0
-                    else:
-                        p_bc = bc_values[1] if len(bc_values) > 1 else bc_values[0]
-
-                    A[cell_R, cell_R] += T_f
-                    b[cell_R] += T_f * p_bc
+            else:
+                # Boundary face. cell_b is the only adjacent cell.
+                cell_b = cell_L if cell_L >= 0 else cell_R
+                bc_val = self._select_bc_value(normal, bc_values)
+                if bc_type == "dirichlet" and bc_val is not None:
+                    A[cell_b, cell_b] += T_f
+                    b[cell_b] += T_f * bc_val
+                elif bc_type == "neumann":
+                    # Specified flux into the cell [kg/s]. Zero by default
+                    # (closed boundary). T_f does not appear on the diagonal
+                    # — mass balance is preserved without coupling to a BC P.
+                    if bc_val is not None:
+                        b[cell_b] += bc_val
 
         return A.tocsr(), b
+
+    def _select_bc_value(self, normal: np.ndarray, bc_values: np.ndarray | None) -> float | None:
+        """Pick the boundary value applicable to a face based on its outward normal.
+
+        bc_values layouts (see ``build_matrix`` docstring):
+        - length 6: ``[-x, +x, -y, +y, -z, +z]``;
+        - length 2 (legacy): ``[low, high]`` based on `np.any(normal < 0)`.
+        """
+        if bc_values is None:
+            return None
+        bc = np.asarray(bc_values).ravel()
+        if bc.size == 0:
+            return None
+        if bc.size >= 6:
+            ax = int(np.argmax(np.abs(normal)))
+            side = 0 if normal[ax] < 0 else 1
+            return float(bc[2 * ax + side])
+        # Legacy two-element form
+        if np.any(normal < 0):
+            return float(bc[0])
+        return float(bc[-1] if bc.size >= 2 else bc[0])
 
     def _build_1d_matrix(
         self,

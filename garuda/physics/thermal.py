@@ -62,13 +62,12 @@ class ThermalFlow:
             Energy accumulation [J/(m³·s)]
 
         """
-        phi = self.rock.porosity if np.isscalar(self.rock.porosity) else np.mean(self.rock.porosity)
-
         # Fluid properties at current state
         rho = self.fluid.density(self.pressure, self.temperature)
         Cp = self.fluid.cp
 
-        # Bulk heat capacity
+        # Bulk heat capacity (rock_properties.heat_capacity_bulk handles
+        # heterogeneous porosity natively).
         rhoCp_bulk = self.rock.heat_capacity_bulk(Cp, rho)
 
         # Energy density
@@ -111,57 +110,70 @@ class ThermalFlow:
         return convective_flux + conductive_flux
 
     def _interpolate_temperature_to_faces(self) -> np.ndarray:
-        """Interpolate cell temperatures to faces (upwind)."""
+        """Interpolate cell temperatures to faces (central averaging).
+
+        Works for any grid dimension by walking the grid.face_cells map.
+        Boundary faces inherit the interior cell's temperature.
+        """
         num_faces = self.grid.num_faces
         T_face = np.zeros(num_faces)
 
-        # Simple averaging for now (upwind would be better for stability)
-        if self.grid.dim == 1:
-            T_face[1:-1] = (self.temperature[:-1] + self.temperature[1:]) / 2
-            T_face[0] = self.temperature[0]
-            T_face[-1] = self.temperature[-1]
+        for f in range(num_faces):
+            cL, cR = int(self.grid.face_cells[f, 0]), int(self.grid.face_cells[f, 1])
+            if cL >= 0 and cR >= 0:
+                T_face[f] = 0.5 * (self.temperature[cL] + self.temperature[cR])
+            elif cL >= 0:
+                T_face[f] = self.temperature[cL]
+            elif cR >= 0:
+                T_face[f] = self.temperature[cR]
 
         return T_face
 
     def _compute_conductive_flux(self) -> np.ndarray:
-        """Compute conductive heat flux: -λ∇T."""
+        """Compute conductive heat flux per face: q_f = -λ_eff (T_R - T_L) / d.
+
+        Uses face_cells connectivity, so it works in 1D, 2D, and 3D.
+        Boundary fluxes are returned as zero (zero-flux Neumann); apply
+        Dirichlet BCs via build_energy_matrix for consistent treatment.
+        """
         num_faces = self.grid.num_faces
         conductive_flux = np.zeros(num_faces)
+        lambda_eff = self._effective_thermal_conductivity()  # per-cell
 
-        # Thermal conductivity (effective, including fluid)
-        lambda_eff = self._effective_thermal_conductivity()
-
-        if self.grid.dim == 1:
-            dx = self.grid.dx if np.isscalar(self.grid.dx) else np.mean(self.grid.dx)
-
-            # Interior faces
-            for i in range(1, num_faces - 1):
-                dT = self.temperature[i] - self.temperature[i - 1]
-                conductive_flux[i] = -lambda_eff * dT / dx
-
-            # Boundary faces (one-sided)
-            conductive_flux[0] = -lambda_eff * (self.temperature[0] - self.T_prev[0]) / (dx / 2)
-            conductive_flux[-1] = -lambda_eff * (self.temperature[-1] - self.T_prev[-1]) / (dx / 2)
+        for f in range(num_faces):
+            cL, cR = int(self.grid.face_cells[f, 0]), int(self.grid.face_cells[f, 1])
+            if cL >= 0 and cR >= 0:
+                d = float(np.linalg.norm(self.grid.cell_centroids[cR] - self.grid.cell_centroids[cL]))
+                if d > 0:
+                    lam_face = self._harmonic_mean(float(lambda_eff[cL]), float(lambda_eff[cR]))
+                    conductive_flux[f] = -lam_face * (self.temperature[cR] - self.temperature[cL]) / d
 
         return conductive_flux
 
-    def _effective_thermal_conductivity(self) -> float:
-        """Compute effective thermal conductivity of rock-fluid system.
+    def _effective_thermal_conductivity(self) -> np.ndarray:
+        """Effective thermal conductivity of rock+fluid system, per cell.
 
         lambda_eff = (1-φ)·lambda_rock + φ·lambda_fluid
 
         Returns
         -------
-        lambda_eff : float
-            Effective thermal conductivity [W/(m·K)]
+        lambda_eff : ndarray of shape (num_cells,)
+            Effective thermal conductivity [W/(m·K)] per cell. Heterogeneous
+            porosity propagates through; homogeneous porosity yields a
+            uniform array.
 
         """
-        phi = self.rock.porosity if np.isscalar(self.rock.porosity) else np.mean(self.rock.porosity)
+        phi = np.asarray(self.rock.porosity)
+        if phi.ndim == 0:
+            phi = np.full(self.grid.num_cells, float(phi))
         lambda_fluid = 0.6  # Water thermal conductivity [W/(m·K)]
+        return (1.0 - phi) * self.rock.lambda_rock + phi * lambda_fluid
 
-        lambda_eff = (1 - phi) * self.rock.lambda_rock + phi * lambda_fluid
-
-        return lambda_eff
+    @staticmethod
+    def _harmonic_mean(a: float, b: float) -> float:
+        """Harmonic mean used to combine cell-centred conductivities at a face."""
+        s = a + b
+        return 2.0 * a * b / s if s > 0 else 0.0
 
     def build_energy_matrix(
         self,
@@ -211,25 +223,25 @@ class ThermalFlow:
             b[i] += energy_accum_old[i] / dt
             b[i] += heat_sources[i]
 
-        # Conduction term: -∇·(λ∇T)
-        lambda_eff = self._effective_thermal_conductivity()
+        # Conduction term: -∇·(λ∇T) assembled per face
+        #   T_f = λ_face * A_f / d_LR   (W/K)
+        # with λ_face = harmonic mean of cell-centred λ on each side. Yields
+        # a symmetric stencil; dimension-agnostic via face_cells.
+        lambda_eff = self._effective_thermal_conductivity()  # per-cell
 
-        if self.grid.dim == 1:
-            dx = self.grid.dx if np.isscalar(self.grid.dx) else np.mean(self.grid.dx)
-            A_cond = dx  # Face area (assume unit area in 1D)
-
-            for i in range(num_cells):
-                # Left face
-                if i > 0:
-                    T_cond = lambda_eff * A_cond / dx
-                    A[i, i] += T_cond
-                    A[i, i - 1] -= T_cond
-
-                # Right face
-                if i < num_cells - 1:
-                    T_cond = lambda_eff * A_cond / dx
-                    A[i, i] += T_cond
-                    A[i, i + 1] -= T_cond
+        for f in range(self.grid.num_faces):
+            cL, cR = int(self.grid.face_cells[f, 0]), int(self.grid.face_cells[f, 1])
+            if cL >= 0 and cR >= 0:
+                d = float(np.linalg.norm(self.grid.cell_centroids[cR] - self.grid.cell_centroids[cL]))
+                if d > 0:
+                    area = float(self.grid.face_areas[f]) if self.grid.face_areas.size else 1.0
+                    lam_face = self._harmonic_mean(float(lambda_eff[cL]), float(lambda_eff[cR]))
+                    T_cond = lam_face * area / d
+                    A[cL, cL] += T_cond
+                    A[cR, cR] += T_cond
+                    A[cL, cR] -= T_cond
+                    A[cR, cL] -= T_cond
+            # Boundary faces: zero-flux Neumann (no contribution).
 
         # Convective term handled explicitly (or via upwind scheme)
         # TODO: Implement implicit convection
@@ -352,7 +364,9 @@ class ThermalFlow:
 
         """
         if depth is None:
-            depth = -self.grid.cell_centroids[:, 2]  # z is negative downward
+            # Grid z grows from 0 upward; treat z as depth below the top of
+            # the reservoir so temperature increases with z.
+            depth = self.grid.cell_centroids[:, 2]
 
         T_initial = surface_temp + gradient * depth
 

@@ -156,8 +156,14 @@ class TestGeothermalGradient:
 
     def test_linear_increase_with_depth(self):
         T = self.flow.compute_geothermal_gradient(298.15, 0.06)
-        depths = -self.grid.cell_centroids[:, 2]
+        # Grid z grows from 0 upward; treat z as depth below the top of the
+        # reservoir so temperature must increase with z.
+        depths = self.grid.cell_centroids[:, 2]
         assert np.allclose(T, 298.15 + 0.06 * depths)
+        # Strict monotonicity along z
+        top = self.grid.get_cell_index(0, 0, 0)
+        bottom = self.grid.get_cell_index(0, 0, self.grid.nz - 1)
+        assert T[bottom] > T[top]
 
     def test_tropical_defaults(self):
         T = self.flow.compute_geothermal_gradient()
@@ -166,7 +172,7 @@ class TestGeothermalGradient:
 
     def test_custom_surface_temp(self):
         T = self.flow.compute_geothermal_gradient(280.0, 0.05)
-        depths = -self.grid.cell_centroids[:, 2]
+        depths = self.grid.cell_centroids[:, 2]
         assert np.allclose(T, 280.0 + 0.05 * depths)
 
 

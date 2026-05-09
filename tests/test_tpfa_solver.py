@@ -349,8 +349,9 @@ class Test1DSolve:
         )
 
         assert len(pressure) == nx
-        # Linear interpolation between boundary values
-        expected = np.linspace(p_left, p_right, nx + 2)[1:-1]
+        # Standard cell-centred FV: cells sit half a cell from each boundary,
+        # so the linear pressure profile is sampled at x = (i + 0.5) * dx.
+        expected = p_left + (p_right - p_left) * (np.arange(nx) + 0.5) / nx
         assert np.allclose(pressure, expected, rtol=1e-10)
 
     def test_pressure_within_bounds(self):
@@ -1020,8 +1021,8 @@ class TestEndToEnd:
         assert len(pressure) == nx
         assert len(flux_data.flux) == grid.num_faces
         assert len(residual) == nx
-        # Linear pressure for uniform grid
-        expected = np.linspace(p_left, p_right, nx + 2)[1:-1]
+        # Cell-centred linear profile (cells at half-cell offset from BCs).
+        expected = p_left + (p_right - p_left) * (np.arange(nx) + 0.5) / nx
         assert np.allclose(pressure, expected, rtol=1e-10)
 
     def test_build_then_solve_consistency(self):

@@ -136,28 +136,29 @@ class RockProperties:
             Background permeability [md]
 
         """
-        np.random.seed(42)  # Reproducibility
+        # Use a local Generator so we don't mutate the global numpy RNG.
+        rng = np.random.default_rng(42)
 
         if channel_orientation == "x":
             # Channels aligned in x-direction
             perm = np.zeros((nx, ny, nz))
             for j in range(ny):
                 for k in range(nz):
-                    is_channel = np.random.rand() < channel_fraction
+                    is_channel = rng.random() < channel_fraction
                     perm[:, j, k] = k_channel if is_channel else k_background
 
         elif channel_orientation == "y":
             perm = np.zeros((nx, ny, nz))
             for i in range(nx):
                 for k in range(nz):
-                    is_channel = np.random.rand() < channel_fraction
+                    is_channel = rng.random() < channel_fraction
                     perm[i, :, k] = k_channel if is_channel else k_background
 
         else:  # 'z'
             perm = np.zeros((nx, ny, nz))
             for i in range(nx):
                 for j in range(ny):
-                    is_channel = np.random.rand() < channel_fraction
+                    is_channel = rng.random() < channel_fraction
                     perm[i, j, :] = k_channel if is_channel else k_background
 
         self.set_heterogeneous(
@@ -247,12 +248,12 @@ class RockProperties:
 
         Returns
         -------
-        rhoCp : float
-            Bulk heat capacity [J/(m³·K)]
+        rhoCp : float or ndarray
+            Bulk heat capacity [J/(m³·K)] — scalar for homogeneous porosity,
+            per-cell array if porosity (or fluid_rho) is heterogeneous.
 
         """
-        phi = self.porosity if np.isscalar(self.porosity) else float(np.mean(self.porosity))
-
+        phi = np.asarray(self.porosity)
         return (1.0 - phi) * self.rho_rock * self.cp + phi * fluid_rho * fluid_cp
 
     def thermal_diffusivity(

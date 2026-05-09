@@ -293,8 +293,8 @@ class DualPorosityModel:
 
     def interporosity_flow_coefficient(
         self,
-        compressibility: float,
-        viscosity: float,
+        compressibility: float | None = None,
+        viscosity: float | None = None,
         model: TransferModel = TransferModel.WARREN_ROOT_PSS,
     ) -> float:
         r"""
@@ -304,15 +304,15 @@ class DualPorosityModel:
             \lambda = \alpha \frac{k_m}{k_f} L_f^2
 
         where :math:`\alpha = \sigma / \tau` and :math:`L_f` is a
-        characteristic fracture length (here taken as the harmonic-mean
-        fracture spacing).
+        characteristic fracture length (taken as the harmonic mean of the
+        fracture spacings).
 
         Parameters
         ----------
-        compressibility : float
-            Total compressibility c_t (1/Pa).
-        viscosity : float
-            Fluid dynamic viscosity μ (Pa·s).
+        compressibility, viscosity : float, optional
+            Accepted for API stability with earlier releases but **not used**
+            in this geometric definition of λ. Retained as keyword arguments
+            so existing call sites (and ``lambda_group``) continue to work.
         model : TransferModel
             Which shape factor to employ.
 
@@ -321,6 +321,9 @@ class DualPorosityModel:
         float
             λ (dimensionless).
         """
+        # compressibility / viscosity intentionally unused — see docstring.
+        del compressibility, viscosity
+
         if model == TransferModel.KAZEMI_GILMAN:
             sigma = self.kazemi_shape_factor()
         elif model == TransferModel.LIM_AGUILERA:
@@ -564,17 +567,21 @@ def convert_dual_to_single(
 ) -> Tuple[float, float]:
     """
     Upscaling dual-porosity properties to an equivalent single-porosity
-    continuum using a simple arithmetic (porosity) and harmonic (permeability)
-    average.
+    continuum using arithmetic averaging for porosity and a harmonic average
+    weighted by ``(1 − phi_f, phi_f)`` for permeability.
+
+    The permeability weights are chosen to make this routine the inverse of
+    :func:`convert_single_to_dual`, which uses
+    ``1 / k_bulk = (1 − phi_f) / k_m + phi_f / k_f``.
 
     Returns
     -------
     (single_porosity, single_permeability) : tuple[float, float]
     """
     phi_bulk = phi_m + phi_f
-    # Harmonic average weighted by volume fraction
-    # Use matrix volume fraction as weight
-    w_m = phi_m / (phi_bulk + 1e-30)
-    w_f = 1.0 - w_m
+    # Inverse of convert_single_to_dual's harmonic-mean rearrangement:
+    #   1/k_bulk = (1 - phi_f)/k_m + phi_f/k_f
+    w_f = phi_f
+    w_m = 1.0 - phi_f
     k_bulk = 1.0 / (w_m / (k_m + 1e-30) + w_f / (k_f + 1e-30))
     return phi_bulk, k_bulk

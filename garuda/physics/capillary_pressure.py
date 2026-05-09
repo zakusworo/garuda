@@ -155,7 +155,14 @@ class VanGenuchtenPc(CapillaryPressureModel):
         return self.p0 * term_safe ** (1.0 - self._m)
 
     def dpc_dsw(self, S_w: float | np.ndarray) -> float | np.ndarray:
-        """Analytical derivative dPc/dSw [Pa]."""
+        """Analytical derivative dPc/dSw [Pa].
+
+        With u = Se^(-1/m) - 1 and Pc = P0 * u^(1-m):
+            dPc/du = P0 * (1-m) * u^(-m)
+            du/dSe = -(1/m) * Se^(-1/m - 1)
+            dSe/dSw = 1/d
+        Combining yields a leading minus sign — Pc decreases with S_w.
+        """
         Se = self.effective_saturation(S_w)
         d = 1.0 - self.swr - self.snr
         if d == 0:
@@ -164,7 +171,7 @@ class VanGenuchtenPc(CapillaryPressureModel):
         term = Se_safe ** (-1.0 / self._m) - 1.0
         # Cap term away from zero to avoid 0**(-m) singularity near Se=1
         term_safe = np.where(term < 1e-12, 1e-12, term)
-        dpc_dse = (self.p0 * (1.0 - self._m) / self._m) * Se_safe ** (-1.0 / self._m - 1.0) * term_safe ** (-self._m)
+        dpc_dse = -(self.p0 * (1.0 - self._m) / self._m) * Se_safe ** (-1.0 / self._m - 1.0) * term_safe ** (-self._m)
         return dpc_dse / d
 
 

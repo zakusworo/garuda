@@ -233,16 +233,13 @@ class SteamRegion(ThermodynamicsRegion):
         if scalar:
             pm_val = pm / 1e6
             T_val = float(temperature)
-            # Use IAPWS saturation temperature to get a consistent T_sat,
-            # then approximate density with ideal gas using specific R
-            try:
-                T_sat = self.iapws.saturation_temperature(pm_val)
-                if T_val < T_sat * 0.95:
-                    # Below saturation: shouldn't happen in steam region,
-                    # but clamp to saturation
-                    T_val = T_sat
-            except Exception:
-                pass
+            # IAPWS-IF97 region 4 backward eq is now well-defined for the full
+            # subcritical range, but guard against NaN/inf (e.g. p ≤ 0).
+            T_sat = self.iapws.saturation_temperature(pm_val)
+            if np.isfinite(T_sat) and T_val < T_sat * 0.95:
+                # Below saturation: shouldn't happen in the steam branch,
+                # clamp to saturation to keep the ideal-gas density sane.
+                T_val = T_sat
             R_specific = 461.5  # J/(kg·K) for steam
             return float(pressure / (R_specific * T_val))
         pm_arr = np.asarray(pressure) / 1e6

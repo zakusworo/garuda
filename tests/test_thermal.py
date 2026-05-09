@@ -213,20 +213,25 @@ class TestInterpolateTemperatureToFaces:
 
 @pytest.mark.skipif(not NUMPY_AVAILABLE, reason="NumPy not available")
 class TestEffectiveThermalConductivity:
-    """Test the _effective_thermal_conductivity private method."""
+    """Test the _effective_thermal_conductivity private method.
 
-    def test_returns_float(self):
-        """Effective conductivity is a scalar float."""
+    The method now returns one value per cell so heterogeneous porosity
+    propagates through; for homogeneous porosity every entry is identical.
+    """
+
+    def test_returns_per_cell_array(self):
+        """Effective conductivity is an ndarray of length num_cells."""
         thermal = _make_1d_thermal(nx=5)
         leff = thermal._effective_thermal_conductivity()
-        assert isinstance(leff, float)
+        assert isinstance(leff, np.ndarray)
+        assert leff.shape == (thermal.grid.num_cells,)
 
     def test_formula_correct(self):
         """lambda_eff = (1-phi)*lambda_rock + phi*lambda_fluid."""
         thermal = _make_1d_thermal(nx=5, porosity=0.25)
         leff = thermal._effective_thermal_conductivity()
         expected = 0.75 * thermal.rock.lambda_rock + 0.25 * 0.6
-        assert np.isclose(leff, expected)
+        assert np.allclose(leff, expected)
 
     def test_between_fluid_and_rock_values(self):
         """Effective value is bounded by fluid and rock conductivities."""
@@ -234,19 +239,20 @@ class TestEffectiveThermalConductivity:
         leff = thermal._effective_thermal_conductivity()
         lambda_rock = thermal.rock.lambda_rock  # 2.5
         lambda_fluid = 0.6
-        assert lambda_fluid < leff < lambda_rock
+        assert np.all(lambda_fluid < leff)
+        assert np.all(leff < lambda_rock)
 
     def test_zero_porosity_gives_rock_only(self):
-        """At phi=0, lambda_eff equals lambda_rock."""
+        """At phi=0, lambda_eff equals lambda_rock everywhere."""
         thermal = _make_1d_thermal(nx=5, porosity=0.0)
         leff = thermal._effective_thermal_conductivity()
-        assert np.isclose(leff, thermal.rock.lambda_rock)
+        assert np.allclose(leff, thermal.rock.lambda_rock)
 
     def test_full_porosity_gives_fluid_only(self):
-        """At phi=1, lambda_eff equals lambda_fluid."""
+        """At phi=1, lambda_eff equals lambda_fluid everywhere."""
         thermal = _make_1d_thermal(nx=5, porosity=1.0)
         leff = thermal._effective_thermal_conductivity()
-        assert np.isclose(leff, 0.6)
+        assert np.allclose(leff, 0.6)
 
 
 # =========================================================================
@@ -281,37 +287,34 @@ class TestComputeConductiveFlux:
         thermal.T_prev = thermal.temperature.copy()
 
         flux = thermal._compute_conductive_flux()
-        leff = thermal._effective_thermal_conductivity()
+        # Per-cell λ is uniform here; harmonic mean equals the cell value.
+        lam_face = float(thermal._effective_thermal_conductivity()[0])
         dx = float(np.mean(thermal.grid.dx))
 
-        # Interior face 1: T[1]-T[0] = 350-400 = -50
-        # flux = -leff * (-50/dx) = +50*leff/dx (positive → flows rightward)
-        expected_1 = -leff * (350.0 - 400.0) / dx
+        expected_1 = -lam_face * (350.0 - 400.0) / dx
         assert np.isclose(flux[1], expected_1)
         assert flux[1] > 0  # flows from hot to cold (positive direction)
 
-        # Interior face 2: T[2]-T[1] = 300-350 = -50
-        expected_2 = -leff * (300.0 - 350.0) / dx
+        expected_2 = -lam_face * (300.0 - 350.0) / dx
         assert np.isclose(flux[2], expected_2)
         assert flux[2] > 0
 
-    def test_boundary_faces_use_prev_temperature(self):
-        """Boundary faces use T vs T_prev for one-sided difference."""
+    def test_boundary_faces_zero_flux(self):
+        """Boundary faces default to zero-flux Neumann (no Dirichlet BC info).
+
+        The previous behaviour mixed a temporal difference (T vs T_prev) into
+        the spatial gradient, which is dimensionally incoherent. The current
+        implementation returns 0 at boundaries; Dirichlet BCs are applied
+        separately via build_energy_matrix.
+        """
         thermal = _make_1d_thermal(nx=3)
         thermal.temperature = np.array([310.0, 310.0, 310.0])
         thermal.T_prev = np.array([300.0, 300.0, 300.0])
 
         flux = thermal._compute_conductive_flux()
-        leff = thermal._effective_thermal_conductivity()
-        dx = float(np.mean(thermal.grid.dx))
 
-        # Boundary face 0: -leff * (T[0]-T_prev[0]) / (dx/2)
-        expected_0 = -leff * (310.0 - 300.0) / (dx / 2)
-        assert np.isclose(flux[0], expected_0)
-
-        # Boundary face -1
-        expected_n = -leff * (310.0 - 300.0) / (dx / 2)
-        assert np.isclose(flux[-1], expected_n)
+        assert np.isclose(flux[0], 0.0)
+        assert np.isclose(flux[-1], 0.0)
 
     def test_flux_magnitude_scales_with_conductivity(self):
         """Higher lambda_rock → larger conductive flux magnitude."""

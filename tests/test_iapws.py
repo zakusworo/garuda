@@ -97,18 +97,12 @@ class TestSaturationTemperature:
         T_sat = props.saturation_temperature(-1.0)
         assert T_sat == 273.15
 
-    @pytest.mark.xfail(
-        reason='Known bug: sqrt of negative discriminant causes NaN for subcritical pressures'
-    )
     def test_at_low_pressure(self):
-        """At p=1 MPa, should return T_sat ~ 453 K (180°C)."""
+        """At p=1 MPa, T_sat ~ 453 K (180 °C)."""
         props = WaterSteamProperties()
         T_sat = props.saturation_temperature(1.0)
         assert 440 <= T_sat <= 460
 
-    @pytest.mark.xfail(
-        reason='Known bug: sqrt of negative discriminant causes NaN for subcritical pressures'
-    )
     def test_inverts_saturation_pressure(self):
         """p_sat(T_sat(p)) ≈ p for p=10 MPa."""
         props = WaterSteamProperties()
@@ -116,11 +110,14 @@ class TestSaturationTemperature:
         p_back = props.saturation_pressure(T_sat)
         assert p_back == pytest.approx(10.0, rel=0.05)
 
-    def test_returns_nan_for_subcritical(self):
-        """Current implementation returns NaN for subcritical p (documenting behaviour)."""
+    def test_subcritical_pressures_return_physical_values(self):
+        """Subcritical pressures return the IAPWS-IF97 backward T_sat, not NaN."""
         props = WaterSteamProperties()
-        T_sat = props.saturation_temperature(1.0)
-        assert np.isnan(T_sat)
+        # Reference points from IAPWS-IF97 region 4 backward equation:
+        for p, T_expected in [(0.1, 372.78), (1.0, 453.03), (10.0, 584.15), (20.0, 638.90)]:
+            T = props.saturation_temperature(p)
+            assert np.isfinite(T), f"T_sat({p} MPa) is non-finite: {T}"
+            assert abs(T - T_expected) < 1.0, f"T_sat({p}) = {T:.2f}, expected ~{T_expected}"
 
 
 # ---------------------------------------------------------------------------
@@ -128,7 +125,7 @@ class TestSaturationTemperature:
 # ---------------------------------------------------------------------------
 
 class TestSaturationDensityLiquid:
-    """Saturated liquid density rho'(T)."""
+    """Saturated liquid density rho'(T) — Wagner & Pruss auxiliary equation."""
 
     def test_always_above_critical_density(self):
         """rho' should be > rhoc=322 for all subcritical T."""
@@ -138,37 +135,33 @@ class TestSaturationDensityLiquid:
             rho = props.saturation_density_liquid(T)
             assert rho > 322.0, f"T={T}: rho={rho}"
 
-    def test_decreases_over_most_of_range(self):
-        """rho' decreases for T > ~360K (after initial small increase)."""
+    def test_monotone_decrease(self):
+        """rho' is strictly decreasing across the full subcritical range."""
         props = WaterSteamProperties()
-        T_vals = np.linspace(380, 640, 30)
+        T_vals = np.linspace(280, 645, 40)
         rho_vals = np.array([props.saturation_density_liquid(T) for T in T_vals])
         assert np.all(np.diff(rho_vals) < 0)
 
     def test_at_373K(self):
-        """At 373K, rho' ~ 2246 kg/m³ (current formula output)."""
+        """rho'(100 °C) ≈ 958 kg/m³ — IAPWS reference."""
         props = WaterSteamProperties()
         rho = props.saturation_density_liquid(373.15)
-        assert 2200 <= rho <= 2300
+        assert 955 <= rho <= 962
 
     def test_at_600K(self):
-        """At 600K, rho' ~ 1576 kg/m³ (current formula output)."""
+        """rho'(600 K) ≈ 649 kg/m³ — IAPWS reference."""
         props = WaterSteamProperties()
         rho = props.saturation_density_liquid(600.0)
-        assert 1500 <= rho <= 1700
+        assert 645 <= rho <= 655
 
-    def test_at_near_critical(self):
-        """At 645K (near Tc), rho' ∼1268 kg/m³."""
+    def test_approaches_rhoc_near_critical(self):
+        """rho' falls toward rhoc=322 kg/m³ as T → Tc."""
         props = WaterSteamProperties()
-        rho = props.saturation_density_liquid(645.0)
-        assert 1200 <= rho <= 1350
-
-    def test_small_initial_increase(self):
-        """rho' increases slightly from 300K → ~360K before decreasing."""
-        props = WaterSteamProperties()
-        rho_300 = props.saturation_density_liquid(300.0)
-        rho_360 = props.saturation_density_liquid(360.0)
-        assert rho_360 > rho_300
+        rho_645 = props.saturation_density_liquid(645.0)
+        rho_647 = props.saturation_density_liquid(647.0)
+        # Both should be moderate (a few hundred), with rho_647 closer to rhoc
+        assert 322 < rho_647 < 500
+        assert rho_647 < rho_645
 
 
 # ---------------------------------------------------------------------------
@@ -176,43 +169,37 @@ class TestSaturationDensityLiquid:
 # ---------------------------------------------------------------------------
 
 class TestSaturationDensityVapor:
-    """Saturated vapor density rho''(T)."""
+    """Saturated vapor density rho''(T) — Wagner & Pruss auxiliary equation."""
 
-    @pytest.mark.xfail(
-        reason='Known bug: exponential overflow — rho\'\' formula exp() argument should be negative'
-    )
-    def test_should_be_small_at_373K(self):
-        """Ideally rho'' should be ~0.6 kg/m³ at 373K."""
+    def test_small_at_373K(self):
+        """rho''(100 °C) ≈ 0.6 kg/m³ — IAPWS reference."""
         props = WaterSteamProperties()
         rho = props.saturation_density_vapor(373.15)
-        assert 0.1 <= rho <= 5.0
+        assert 0.5 <= rho <= 0.7
 
-    @pytest.mark.xfail(
-        reason='Known bug: exponential overflow — rho\'\' is absurdly large'
-    )
-    def test_should_be_less_than_liquid(self):
-        """Ideally rho'' < rho' at all subcritical T."""
+    def test_less_than_liquid(self):
+        """rho'' < rho' at all subcritical T."""
         props = WaterSteamProperties()
-        T_vals = [300, 350, 400, 500, 600]
+        T_vals = [300, 350, 400, 500, 600, 645]
         for T in T_vals:
             rho_liq = props.saturation_density_liquid(T)
             rho_vap = props.saturation_density_vapor(T)
-            assert rho_vap < rho_liq
+            assert rho_vap < rho_liq, f"T={T}: rho_vap={rho_vap}, rho_liq={rho_liq}"
 
     def test_is_finite(self):
-        """rho'' returns a finite float (even if astronomically large)."""
+        """rho'' returns a finite float."""
         props = WaterSteamProperties()
         rho = props.saturation_density_vapor(400.0)
         assert isinstance(rho, float)
         assert not np.isnan(rho)
         assert not np.isinf(rho)
 
-    def test_decreases_with_temperature(self):
-        """Current formula: astronomical values decrease with rising T."""
+    def test_increases_with_temperature(self):
+        """rho'' rises with T as it approaches rhoc from below."""
         props = WaterSteamProperties()
         T_vals = np.linspace(300, 640, 30)
         rho_vals = np.array([props.saturation_density_vapor(T) for T in T_vals])
-        assert np.all(np.diff(rho_vals) < 0)
+        assert np.all(np.diff(rho_vals) > 0)
 
 
 # ---------------------------------------------------------------------------

@@ -579,6 +579,14 @@ class SourceNetwork:
         ``SourceNode`` copies of every active well in *well_manager*.
         Existing groups are **not** cleared; the new group is simply added.
 
+        Note
+        ----
+        ``well.current_rate`` is only populated after the well has been
+        evaluated (i.e. after ``apply_constraints`` or
+        ``compute_well_rates``). Calling this method before the first
+        evaluation copies a rate of 0 for every well — re-call after
+        evaluating the wells to keep the network in sync.
+
         Parameters
         ----------
         well_manager : WellManager

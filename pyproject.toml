@@ -84,11 +84,8 @@ Documentation = "https://garuda-sim.readthedocs.io"
 Repository = "https://github.com/zakusworo/garuda"
 Issues = "https://github.com/zakusworo/garuda/issues"
 
-[project.scripts]
-garuda-run = "garuda.cli:main"
-
 [tool.setuptools]
-packages = ["garuda", "garuda.core", "garuda.physics", "garuda.solvers", "garuda.ml", "garuda.agents", "garuda.utils"]
+packages = ["garuda", "garuda.core", "garuda.physics", "garuda.solvers"]
 
 [tool.setuptools_scm]
 write_to = "garuda/_version.py"

@@ -66,19 +66,16 @@ class MultiphaseFlow:
 
     def _refresh(self):
         p, T = self.state.pressure, self.state.temperature
-        nc = self.grid.num_cells
         pm = p / 1e6
-        rw = np.zeros(nc)
-        mw = np.zeros(nc)
-        hw = np.zeros(nc)
-        hv = np.zeros(nc)
-        ts = np.zeros(nc)
-        for i in range(nc):
-            rw[i] = self.iapws.density_region1(pm[i], T[i])
-            mw[i] = self.iapws.viscosity_liquid(T[i])
-            hw[i] = self.iapws.enthalpy_liquid(T[i]) * 1000
-            hv[i] = self.iapws.enthalpy_vapor(T[i]) * 1000
-            ts[i] = self.iapws.saturation_temperature(pm[i])
+        # density_region1, viscosity_liquid, enthalpy_liquid, enthalpy_vapor
+        # all broadcast over arrays — avoid the per-cell Python loop.
+        rw = np.asarray(self.iapws.density_region1(pm, T), dtype=float)
+        mw = np.asarray(self.iapws.viscosity_liquid(T), dtype=float)
+        hw = np.asarray(self.iapws.enthalpy_liquid(T), dtype=float) * 1000.0
+        hv = np.asarray(self.iapws.enthalpy_vapor(T), dtype=float) * 1000.0
+        # saturation_temperature stays scalar-only (uses early-return logic).
+        ts = np.fromiter((self.iapws.saturation_temperature(pi) for pi in pm),
+                         dtype=float, count=pm.size)
         self._cache = {"rw": rw, "mw": mw, "hw": hw, "hv": hv, "Ts": ts}
 
     # ── IAPWS phase equilibrium ──────────────────────────────────────────
@@ -116,14 +113,17 @@ class MultiphaseFlow:
         )
         vol = self.grid.cell_volumes
         rho_r, cp_r = self.rock.rho_rock, self.rock.cp
-        lam = self.rock.lambda_rock
+
+        # Build the pressure solver once per time step. mu/rho here are
+        # constants from FluidProperties; rebuilding inside the loop forced a
+        # full transmissibility (and numba) recompute every Picard iteration.
+        solver = TPFASolver(self.grid, mu=self.fluid.mu, rho=self.fluid.rho)
 
         converged = False
         for it in range(max_iter):
             po, To, So = self.state.pressure.copy(), self.state.temperature.copy(), self.state.saturation.copy()
 
             # ── Pressure solve via TPFASolver ──
-            solver = TPFASolver(self.grid, mu=self.fluid.mu, rho=self.fluid.rho)
             # If no BC provided, use far-field Dirichlet to keep system well-posed
             if bc_values is None:
                 bc = np.array([self.state.pressure[0], self.state.pressure[-1]])
@@ -131,14 +131,16 @@ class MultiphaseFlow:
                 bc = bc_values
             self.state.pressure = solver.solve(source_terms, bc_type, bc, "direct")
 
-            # ── Explicit energy update ──
+            # ── Explicit energy update (source-only, simplified) ──
+            # (rho*Cp)_bulk * dT/dt = Q_src   [J/(m^3*K) * K/s = W/m^3]
+            # Conduction is intentionally omitted in this lumped step; for a
+            # proper face-based conduction discretisation use ThermalFlow.
             self._refresh()
             for i in range(self.grid.num_cells):
                 rhoCp = (1 - phi[i]) * rho_r * cp_r + phi[i] * self._cache["rw"][i] * self.fluid.cp
-                Q_cond = lam * vol[i]  # simplified conduction
-                Q_src = heat_sources[i] * vol[i]
-                dT = (-Q_cond * (self.state.temperature[i] - self.state.prev_temperature[i]) + Q_src) * dts
-                self.state.temperature[i] = self.state.temperature[i] + dT / max(rhoCp * vol[i], 1.0)
+                Q_src = heat_sources[i]  # W/m^3
+                dT = Q_src * dts / max(rhoCp, 1.0)
+                self.state.temperature[i] = self.state.temperature[i] + dT
                 self.state.temperature[i] = np.clip(self.state.temperature[i], 273.15, 650.0)
 
             # ── Enthalpy from phase mix ──
@@ -172,21 +174,33 @@ class MultiphaseFlow:
     # ── Initialization ───────────────────────────────────────────────────
 
     def set_initial_state(self, pressure, temperature, saturation=None):
-        self.state.pressure = pressure.copy()
-        self.state.temperature = temperature.copy()
-        self.state.saturation = saturation.copy() if saturation is not None else np.zeros_like(pressure)
+        # Accept Python scalars / lists / arrays alike — broadcast scalars to
+        # the grid so callers don't have to wrap a single number in np.full.
+        nc = self.grid.num_cells
+        p = np.broadcast_to(np.asarray(pressure, dtype=float), (nc,)).copy()
+        T = np.broadcast_to(np.asarray(temperature, dtype=float), (nc,)).copy()
+        if saturation is None:
+            S = np.zeros(nc)
+        else:
+            S = np.broadcast_to(np.asarray(saturation, dtype=float), (nc,)).copy()
+
+        self.state.pressure = p
+        self.state.temperature = T
+        self.state.saturation = S
         self._refresh()
         Sw = 1.0 - self.state.saturation
         Ss = self.state.saturation
         self.state.enthalpy = Sw * self._cache["hw"] + Ss * self._cache["hv"]
-        self.state.prev_pressure = pressure.copy()
-        self.state.prev_saturation = self.state.saturation.copy()
-        self.state.prev_temperature = temperature.copy()
+        self.state.prev_pressure = p.copy()
+        self.state.prev_saturation = S.copy()
+        self.state.prev_temperature = T.copy()
         self.state.prev_enthalpy = self.state.enthalpy.copy()
 
     def compute_geothermal_gradient(self, surface_temp=298.15, gradient=0.06, depth=None):
         if depth is None:
-            depth = -self.grid.cell_centroids[:, 2]
+            # Grid z grows upward from 0; interpret z as depth below the top
+            # of the reservoir so temperature increases with z.
+            depth = self.grid.cell_centroids[:, 2]
         Ti = surface_temp + gradient * depth
         self.state.temperature = Ti
         self.state.prev_temperature = Ti.copy()

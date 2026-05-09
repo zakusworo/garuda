@@ -75,8 +75,8 @@ class WellOperatingConditions:
 
     constraint_type: str = "rate"
     target_value: float = 0.0
-    min_bhp: float = 1e6  # 10 bar
-    max_bhp: float = 300e6  # 300 bar
+    min_bhp: float = 50e5   # 50 bar — matches WellManager.add_well default
+    max_bhp: float = 300e5  # 300 bar — matches WellManager.add_well default
     max_rate: float = 100.0  # kg/s
 
 
@@ -233,18 +233,20 @@ class PeacemanWell:
         Returns
         -------
         q : float
-            Flow rate [kg/s] (positive = production, negative = injection)
+            Flow rate [kg/s] (negative = production, positive = injection).
+            Producer drawdown (p_wf < p_cell) yields q < 0 (mass leaves the cell);
+            injector overpressure (p_wf > p_cell) yields q > 0 (mass enters the cell).
 
         """
         if self.productivity_index is None:
             raise ValueError("Productivity index not computed. Call compute_productivity_index() first.")
 
-        # Gravity correction
+        # Gravity correction (hydrostatic head between cell and wellbore datum)
         g = 9.81
         hydrostatic = density * g * depth_difference
 
-        # Pressure difference
-        dp = cell_pressure - wellbore_pressure + hydrostatic
+        # Driving pressure (positive => fluid flows INTO the cell from the well)
+        dp = wellbore_pressure - cell_pressure - hydrostatic
 
         # Flow rate (multiply by density to get mass flow)
         q = self.productivity_index * dp * density
@@ -270,25 +272,27 @@ class PeacemanWell:
 
         """
         if self.operating.constraint_type == "rate":
-            # Constant rate constraint
+            # Constant rate constraint. target_value sign convention:
+            #   negative = producer (mass leaves cell), positive = injector.
             rate = np.copysign(1.0, self.operating.target_value) * min(
                 abs(self.operating.target_value), self.operating.max_rate
             )
 
-            # Calculate required BHP
+            # Required BHP from rate = PI * (bhp - p_cell) * rho:
+            #   bhp = p_cell + rate / (PI * rho)
             pi = self.productivity_index
             assert pi is not None
             if abs(pi) > 1e-15 and density > 0:
-                bhp = cell_pressure - rate / (pi * density)
+                bhp = cell_pressure + rate / (pi * density)
             else:
                 bhp = cell_pressure
 
             # Check BHP limits
-            if rate > 0:  # Producer (positive rate = extraction)
+            if rate < 0:  # Producer (negative rate = extraction): enforce min_bhp
                 if bhp < self.operating.min_bhp:
                     bhp = self.operating.min_bhp
                     rate = self.compute_rate(cell_pressure, bhp, density)
-            else:  # Injector (negative rate = injection)
+            else:  # Injector (positive rate = injection): enforce max_bhp
                 if bhp > self.operating.max_bhp:
                     bhp = self.operating.max_bhp
                     rate = self.compute_rate(cell_pressure, bhp, density)
@@ -305,7 +309,7 @@ class PeacemanWell:
                 pi = self.productivity_index
                 assert pi is not None
                 if abs(pi) > 1e-15 and density > 0:
-                    bhp = cell_pressure - rate / (pi * density)
+                    bhp = cell_pressure + rate / (pi * density)
 
         else:
             raise ValueError(f"Unknown constraint type: {self.operating.constraint_type}")
@@ -390,11 +394,13 @@ class WellManager:
             constraint_type = "rate"
             target_value = target_rate
 
-        # Set sign convention (negative = production)
-        if well_type == "producer" and target_value > 0:
-            target_value = -target_value
-        elif well_type == "injector" and target_value < 0:
-            target_value = -target_value
+        # Sign convention applies to rate targets only (BHP is an absolute
+        # pressure and must stay positive). negative rate = production.
+        if constraint_type == "rate":
+            if well_type == "producer" and target_value > 0:
+                target_value = -target_value
+            elif well_type == "injector" and target_value < 0:
+                target_value = -target_value
 
         # Create operating conditions
         operating = WellOperatingConditions(

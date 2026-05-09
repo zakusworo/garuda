@@ -193,21 +193,28 @@ class TestPeacemanWell:
         assert 1e-12 < PI < 1e-6, f"PI {PI} out of expected range"
     
     def test_compute_rate(self):
-        """Test rate calculation from pressure difference."""
+        """Test rate calculation from pressure difference.
+
+        Sign convention: negative rate = production (mass leaves cell),
+        positive rate = injection (mass enters cell). p_wf < p_cell creates
+        drawdown that produces, so q must be negative.
+        """
         # First compute PI
         k = 100e-15
         mu = 1e-3
         self.well.compute_productivity_index(k, mu, dx=100, dy=100, dz=10)
-        
-        # Pressure difference: 10 bar
+
+        # Drawdown: p_wf below p_cell -> production
         p_cell = 200e5
         p_wf = 190e5
         rho = 1000.0
-        
+
         q = self.well.compute_rate(p_cell, p_wf, rho)
-        
-        # Should be positive (production)
-        assert q > 0, f"Expected positive rate, got {q}"
+        assert q < 0, f"Expected negative (production) rate, got {q}"
+
+        # Overpressure: p_wf above p_cell -> injection
+        q_inj = self.well.compute_rate(p_cell, p_cell + 10e5, rho)
+        assert q_inj > 0, f"Expected positive (injection) rate, got {q_inj}"
     
     def test_skin_factor_effect(self):
         """Test skin factor effect on productivity."""

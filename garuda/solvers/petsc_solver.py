@@ -532,32 +532,35 @@ class PETScTPFASolver:
                 if bc_type == "dirichlet" and bc_values is not None and len(bc_values) > 3:
                     b_vec[c] += T[f] * bc_values[3]
 
-            # Bottom face (iz-1)
+            # Z-face indexing: bottom face of cell (ix,iy,iz) sits at
+            # z_edges[iz], top face at z_edges[iz+1]. Grid._generate_faces
+            # lays them out as (k, j, i) with i-fastest, so:
+            #   bottom = num_faces_x + num_faces_y + iz       * nx*ny + iy*nx + ix
+            #   top    = num_faces_x + num_faces_y + (iz + 1) * nx*ny + iy*nx + ix
+            z_c = self.grid.cell_centroids[c, 2]
+
+            # Bottom face (z_edges[iz]) — neighbour at iz - 1
+            f = num_faces_x + num_faces_y + iz * nx * ny + iy * nx + ix
+            diag += T[f]
             if iz > 0:
-                f = num_faces_x + num_faces_y + (iz - 1) * nx * ny + iy * nx + ix
-                diag += T[f]
                 A_mat[c, c - nx * ny] = -T[f]
+                z_neighbour = self.grid.cell_centroids[c - nx * ny, 2]
+                # Per-face gravity contribution: T_f * rho * g * (z_c - z_R)
+                b_vec[c] += T[f] * self.rho * self.g * (z_c - z_neighbour)
             else:
-                f = num_faces_x + num_faces_y + iz * nx * ny + iy * nx + ix
-                diag += T[f]
                 if bc_type == "dirichlet" and bc_values is not None and len(bc_values) > 4:
                     b_vec[c] += T[f] * bc_values[4]
 
-            # Top face (iz+1)
+            # Top face (z_edges[iz+1]) — neighbour at iz + 1
+            f = num_faces_x + num_faces_y + (iz + 1) * nx * ny + iy * nx + ix
+            diag += T[f]
             if iz < nz - 1:
-                f = num_faces_x + num_faces_y + iz * nx * ny + iy * nx + ix
-                diag += T[f]
                 A_mat[c, c + nx * ny] = -T[f]
+                z_neighbour = self.grid.cell_centroids[c + nx * ny, 2]
+                b_vec[c] += T[f] * self.rho * self.g * (z_c - z_neighbour)
             else:
-                f = num_faces_x + num_faces_y + iz * nx * ny + iy * nx + ix
-                diag += T[f]
                 if bc_type == "dirichlet" and bc_values is not None and len(bc_values) > 5:
                     b_vec[c] += T[f] * bc_values[5]
-
-            # Gravity contributions to RHS
-            z_c = self.grid.cell_centroids[c, 2]
-            dz_cell = self.grid.dz[iz] if hasattr(self.grid.dz, "__len__") else self.grid.dz
-            b_vec[c] += diag * self.rho * self.g * z_c
 
             A_mat[c, c] = diag
 
@@ -674,6 +677,19 @@ class PETScTPFASolver:
 
         """
         _require_petsc()
+
+        # The current callback signature uses ``J_mat.setArray(J_arr)`` which
+        # is only valid for PETSc Vec objects; the matrix is created as AIJ
+        # (sparse) below, so the assignment fails at runtime. Until a proper
+        # sparse-fill path (with explicit row/col MatSetValues + assembly) is
+        # implemented this method is non-functional, and it is honest to fail
+        # eagerly rather than allow callers to discover that mid-run.
+        raise NotImplementedError(
+            "PETScDMSolver.solve_nonlinear is not yet wired up: the Jacobian "
+            "callback uses Mat.setArray() which is invalid for AIJ matrices. "
+            "Use solve() for the linear case, or open an issue if you need "
+            "the SNES path."
+        )
 
         snes = PETSc.SNES().create(comm=self.comm)  # type: ignore[union-attr]
         snes.setType(PETSc.SNES.Type.NEWTONLS)

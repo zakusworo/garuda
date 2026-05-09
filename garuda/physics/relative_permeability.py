@@ -209,12 +209,14 @@ class StoneIRelativePermeability:
     (water/oil/gas) from two-phase data.
 
     .. math::
-        k_{ro} = k_{row} \cdot k_{rog} \cdot
-                  \frac{S_{o}}{(1 - S_{wc})(1 - S_{orw})}
+        k_{ro} = \frac{k_{row}(S_w) \cdot k_{rog}(S_l) \cdot S_o}
+                       {(1 - S_w)(1 - S_g)}
 
-    where :math:`k_{row}` is the oil/water two-phase kr for oil at
-    water saturation :math:`S_w + S_o`, and :math:`k_{rog}` is the
-    oil/gas two-phase kr for oil at gas saturation :math:`S_g + S_o`.
+    where :math:`S_g = 1 - S_w - S_o`, :math:`S_l = S_o + S_w` is the
+    liquid (wetting in the oil/gas system) saturation, :math:`k_{row}(S_w)`
+    is the oil rel-perm from the two-phase oil/water curve, and
+    :math:`k_{rog}(S_l)` is the oil rel-perm from the two-phase
+    oil/gas curve.
 
     Parameters
     ----------
@@ -258,17 +260,24 @@ class StoneIRelativePermeability:
         """
         S_w = np.asarray(S_w, dtype=float)
         S_o = np.asarray(S_o, dtype=float)
-        # Evaluate two-phase models at effective saturations
-        krw, _ = self.krow_model(S_w)
-        _, kro_w = self.krow_model(S_w + S_o)  # oil in oil/water system
-        _, kro_g = self.krog_model(S_o)  # oil in oil/gas system
-        krg, _ = self.krog_model(S_o + S_w)  # gas rel-perm
+        S_g = np.maximum(0.0, 1.0 - S_w - S_o)
+        S_l = S_o + S_w  # liquid sat: wetting phase in the o/g system
 
-        denom = (1.0 - self.swc) * (1.0 - self.sorw)
-        if denom == 0:
-            kro = np.zeros_like(S_o, dtype=float)
-        else:
-            kro = kro_w * kro_g * (S_o / denom)
+        # Two-phase rel-perm models follow the convention
+        # ``model(S_wetting) -> (kr_wetting, kr_non_wetting)``.
+        # In the oil/water system water is wetting:
+        #   krow_model(S_w) -> (krw, kro_in_ow)
+        # In the oil/gas system the liquid (oil+water) is wetting:
+        #   krog_model(S_l) -> (kro_in_og, krg)
+        krw, kro_w = self.krow_model(S_w)
+        kro_g, krg = self.krog_model(S_l)
+
+        # Aziz-Settari Stone I:
+        #   kro = (kro_w * kro_g) * S_o / [(1 - S_w)(1 - S_g)]
+        denom = (1.0 - S_w) * (1.0 - S_g)
+        denom_safe = np.where(denom > 1e-12, denom, 1.0)
+        kro = np.where(denom > 1e-12, (kro_w * kro_g) * S_o / denom_safe, 0.0)
+        kro = np.clip(kro, 0.0, 1.0)
         return krw, kro, krg
 
 

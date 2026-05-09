@@ -113,11 +113,13 @@ class StructuredGrid(Grid):
         #   for k: for j: for i:
         # This matches get_cell_index / get_ijk.
         if self.dim == 3:
-            # meshgrid gives i-major when indexing='ij'
+            # meshgrid with indexing='ij' returns shape (nx, ny, nz). To match
+            # get_cell_index = i + j*nx + k*nx*ny we need i-fastest ordering,
+            # which is Fortran-order ravel.
             xx, yy, zz = np.meshgrid(xc_centers, yc_centers, zc_centers, indexing="ij")
-            self.cell_centroids = np.column_stack([xx.ravel(), yy.ravel(), zz.ravel()])
+            self.cell_centroids = np.column_stack([xx.ravel("F"), yy.ravel("F"), zz.ravel("F")])
             dx3, dy3, dz3 = np.meshgrid(self.dx, self.dy, self.dz, indexing="ij")
-            self.cell_volumes = (dx3 * dy3 * dz3).ravel()
+            self.cell_volumes = (dx3 * dy3 * dz3).ravel("F")
 
         elif self.dim == 2:
             xx, yy = np.meshgrid(xc_centers, yc_centers, indexing="ij")
@@ -143,8 +145,11 @@ class StructuredGrid(Grid):
         """
         if self.dim == 1:
             self.num_faces = self.nx + 1
-            self.face_areas = np.ones(self.num_faces, dtype=float)
+            # Face area perpendicular to flow = dy * dz (the cross-section).
+            self.face_areas = np.full(self.num_faces, float(self.dy[0]) * float(self.dz[0]))
             self.face_centroids = np.zeros((self.num_faces, 3), dtype=float)
+            for i in range(self.num_faces):
+                self.face_centroids[i, 0] = xc[i]
             self.face_normals = np.zeros((self.num_faces, 3), dtype=float)
             self.face_normals[:, 0] = [-1 if i == 0 else 1 for i in range(self.num_faces)]
 

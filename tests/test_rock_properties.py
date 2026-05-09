@@ -746,16 +746,16 @@ class TestHeatCapacityBulk:
         assert rhoCp_high > 0
         assert rhoCp_low > 0
 
-    def test_array_porosity_uses_mean(self):
-        """With array porosity, should use mean porosity."""
+    def test_array_porosity_returns_per_cell_values(self):
+        """With array porosity, heat_capacity_bulk returns one value per cell."""
         phi = np.array([0.1, 0.2, 0.3, 0.4])
         rock = RockProperties()
         rock.set_heterogeneous(porosity=phi,
                                permeability=np.array([1, 1, 1, 1], dtype=float))
         rhoCp = rock.heat_capacity_bulk(fluid_cp=4180, fluid_rho=1000)
-        mean_phi = np.mean(phi)
-        expected = (1 - mean_phi) * 2650 * 840 + mean_phi * 1000 * 4180
-        assert np.isclose(rhoCp, expected)
+        expected = (1 - phi) * 2650 * 840 + phi * 1000 * 4180
+        assert isinstance(rhoCp, np.ndarray)
+        assert np.allclose(rhoCp, expected)
 
     def test_zero_porosity_pure_rock(self):
         """Zero porosity should give pure rock heat capacity."""
@@ -936,10 +936,10 @@ class TestWorkflowIntegration:
         assert np.all(c_t > 0)
 
         rhoCp = rock.heat_capacity_bulk(fluid_cp=4180, fluid_rho=1000)
-        assert rhoCp > 0
+        assert np.all(rhoCp > 0)
 
         alpha = rock.thermal_diffusivity(fluid_cp=4180, fluid_rho=1000)
-        assert alpha > 0
+        assert np.all(alpha > 0)
 
     def test_default_to_gaussian_workflow(self):
         """Create default, then generate gaussian field."""
@@ -975,10 +975,10 @@ class TestWorkflowIntegration:
         assert np.all(c_t > 0)
 
         rhoCp = rock.heat_capacity_bulk(4180, 1000)
-        assert rhoCp > 0
+        assert np.all(rhoCp > 0)
 
         alpha = rock.thermal_diffusivity(4180, 1000)
-        assert alpha > 0
+        assert np.all(alpha > 0)
 
     def test_switch_between_fields(self):
         """Switch from channelized to gaussian on same instance."""
