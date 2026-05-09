@@ -1,0 +1,571 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=3469de9b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">garuda</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="garuda">
+<h1>garuda<a class="headerlink" href="#garuda" title="Link to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="garuda.html">garuda package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="garuda.html#module-garuda">Module contents</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.Grid"><code class="docutils literal notranslate"><span class="pre">Grid</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.dim"><code class="docutils literal notranslate"><span class="pre">Grid.dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.num_cells"><code class="docutils literal notranslate"><span class="pre">Grid.num_cells</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.num_faces"><code class="docutils literal notranslate"><span class="pre">Grid.num_faces</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.num_vertices"><code class="docutils literal notranslate"><span class="pre">Grid.num_vertices</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.cell_volumes"><code class="docutils literal notranslate"><span class="pre">Grid.cell_volumes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.cell_centroids"><code class="docutils literal notranslate"><span class="pre">Grid.cell_centroids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.face_areas"><code class="docutils literal notranslate"><span class="pre">Grid.face_areas</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.face_centroids"><code class="docutils literal notranslate"><span class="pre">Grid.face_centroids</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.face_normals"><code class="docutils literal notranslate"><span class="pre">Grid.face_normals</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.cell_faces"><code class="docutils literal notranslate"><span class="pre">Grid.cell_faces</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.face_cells"><code class="docutils literal notranslate"><span class="pre">Grid.face_cells</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.num_boundaries"><code class="docutils literal notranslate"><span class="pre">Grid.num_boundaries</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Grid.__init__"><code class="docutils literal notranslate"><span class="pre">Grid.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.StructuredGrid"><code class="docutils literal notranslate"><span class="pre">StructuredGrid</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.nx"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.nx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.ny"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.ny</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.nz"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.nz</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.dx"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.dx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.dy"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.dy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.dz"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.dz</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.get_cell_index"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.get_cell_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.get_ijk"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.get_ijk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.set_permeability"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.set_permeability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.set_permiability"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.set_permiability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.set_porosity"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.set_porosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StructuredGrid.__init__"><code class="docutils literal notranslate"><span class="pre">StructuredGrid.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.TPFASolver"><code class="docutils literal notranslate"><span class="pre">TPFASolver</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TPFASolver.__init__"><code class="docutils literal notranslate"><span class="pre">TPFASolver.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TPFASolver.compute_flux"><code class="docutils literal notranslate"><span class="pre">TPFASolver.compute_flux()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TPFASolver.build_matrix"><code class="docutils literal notranslate"><span class="pre">TPFASolver.build_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TPFASolver.solve"><code class="docutils literal notranslate"><span class="pre">TPFASolver.solve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TPFASolver.compute_residual"><code class="docutils literal notranslate"><span class="pre">TPFASolver.compute_residual()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.FluidProperties"><code class="docutils literal notranslate"><span class="pre">FluidProperties</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.fluid_type"><code class="docutils literal notranslate"><span class="pre">FluidProperties.fluid_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.mu"><code class="docutils literal notranslate"><span class="pre">FluidProperties.mu</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.rho"><code class="docutils literal notranslate"><span class="pre">FluidProperties.rho</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.cp"><code class="docutils literal notranslate"><span class="pre">FluidProperties.cp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.beta"><code class="docutils literal notranslate"><span class="pre">FluidProperties.beta</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.c_fluid"><code class="docutils literal notranslate"><span class="pre">FluidProperties.c_fluid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.T_ref"><code class="docutils literal notranslate"><span class="pre">FluidProperties.T_ref</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.p_ref"><code class="docutils literal notranslate"><span class="pre">FluidProperties.p_ref</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.rho_ref"><code class="docutils literal notranslate"><span class="pre">FluidProperties.rho_ref</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.density"><code class="docutils literal notranslate"><span class="pre">FluidProperties.density()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.viscosity"><code class="docutils literal notranslate"><span class="pre">FluidProperties.viscosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.formation_volume_factor"><code class="docutils literal notranslate"><span class="pre">FluidProperties.formation_volume_factor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.total_compressibility"><code class="docutils literal notranslate"><span class="pre">FluidProperties.total_compressibility()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidProperties.__init__"><code class="docutils literal notranslate"><span class="pre">FluidProperties.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.RockProperties"><code class="docutils literal notranslate"><span class="pre">RockProperties</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.porosity"><code class="docutils literal notranslate"><span class="pre">RockProperties.porosity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.permeability"><code class="docutils literal notranslate"><span class="pre">RockProperties.permeability</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.permeability_unit"><code class="docutils literal notranslate"><span class="pre">RockProperties.permeability_unit</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.c_rock"><code class="docutils literal notranslate"><span class="pre">RockProperties.c_rock</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.cp"><code class="docutils literal notranslate"><span class="pre">RockProperties.cp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.rho_rock"><code class="docutils literal notranslate"><span class="pre">RockProperties.rho_rock</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.lambda_rock"><code class="docutils literal notranslate"><span class="pre">RockProperties.lambda_rock</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.k_ratio"><code class="docutils literal notranslate"><span class="pre">RockProperties.k_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.set_heterogeneous"><code class="docutils literal notranslate"><span class="pre">RockProperties.set_heterogeneous()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.set_channelized_permeability"><code class="docutils literal notranslate"><span class="pre">RockProperties.set_channelized_permeability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.set_gaussian_permeability"><code class="docutils literal notranslate"><span class="pre">RockProperties.set_gaussian_permeability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.total_compressibility"><code class="docutils literal notranslate"><span class="pre">RockProperties.total_compressibility()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.heat_capacity_bulk"><code class="docutils literal notranslate"><span class="pre">RockProperties.heat_capacity_bulk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.thermal_diffusivity"><code class="docutils literal notranslate"><span class="pre">RockProperties.thermal_diffusivity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RockProperties.__init__"><code class="docutils literal notranslate"><span class="pre">RockProperties.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.IAPWSFluidProperties"><code class="docutils literal notranslate"><span class="pre">IAPWSFluidProperties</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.IAPWSFluidProperties.__init__"><code class="docutils literal notranslate"><span class="pre">IAPWSFluidProperties.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.IAPWSFluidProperties.get_properties"><code class="docutils literal notranslate"><span class="pre">IAPWSFluidProperties.get_properties()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.IAPWSFluidProperties.get_density"><code class="docutils literal notranslate"><span class="pre">IAPWSFluidProperties.get_density()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.IAPWSFluidProperties.get_viscosity"><code class="docutils literal notranslate"><span class="pre">IAPWSFluidProperties.get_viscosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.IAPWSFluidProperties.get_enthalpy"><code class="docutils literal notranslate"><span class="pre">IAPWSFluidProperties.get_enthalpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.IAPWSFluidProperties.get_all"><code class="docutils literal notranslate"><span class="pre">IAPWSFluidProperties.get_all()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.get_region"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.get_region()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.saturation_pressure"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.saturation_pressure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.saturation_temperature"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.saturation_temperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.saturation_density_liquid"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.saturation_density_liquid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.saturation_density_vapor"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.saturation_density_vapor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.density"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.density()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.density_region1"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.density_region1()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.density_region2"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.density_region2()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.density_region3"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.density_region3()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.viscosity"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.viscosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.viscosity_liquid"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.viscosity_liquid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.viscosity_vapor"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.viscosity_vapor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.enthalpy"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.enthalpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.enthalpy_liquid"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.enthalpy_liquid()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.enthalpy_vapor"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.enthalpy_vapor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.specific_heat_cp"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.specific_heat_cp()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.thermal_conductivity"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.thermal_conductivity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.phase"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.phase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.get_all_properties"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.get_all_properties()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterSteamProperties.__init__"><code class="docutils literal notranslate"><span class="pre">WaterSteamProperties.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.grid"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.grid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.fluid"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.fluid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.rock"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.rock</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.pressure"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.pressure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.saturation"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.saturation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.temperature"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.prev_accumulation"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.prev_accumulation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.compute_accumulation"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.compute_accumulation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.compute_flux"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.compute_flux()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.step_implicit"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.step_implicit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SinglePhaseFlow.__init__"><code class="docutils literal notranslate"><span class="pre">SinglePhaseFlow.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.ThermalFlow"><code class="docutils literal notranslate"><span class="pre">ThermalFlow</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.grid"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.grid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.rock"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.rock</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.fluid"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.fluid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.pressure"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.pressure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.temperature"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.compute_energy_accumulation"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.compute_energy_accumulation()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.compute_heat_flux"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.compute_heat_flux()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.build_energy_matrix"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.build_energy_matrix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.step_coupled"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.step_coupled()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.compute_geothermal_gradient"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.compute_geothermal_gradient()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermalFlow.__init__"><code class="docutils literal notranslate"><span class="pre">ThermalFlow.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow.__init__"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow.relative_permeability"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow.relative_permeability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow.apply_phase_equilibrium"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow.apply_phase_equilibrium()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow.step"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow.step()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow.set_initial_state"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow.set_initial_state()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow.compute_geothermal_gradient"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow.compute_geothermal_gradient()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseFlow.get_summary"><code class="docutils literal notranslate"><span class="pre">MultiphaseFlow.get_summary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.MultiphaseState"><code class="docutils literal notranslate"><span class="pre">MultiphaseState</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.pressure"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.pressure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.saturation"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.saturation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.temperature"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.enthalpy"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.enthalpy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.prev_pressure"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.prev_pressure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.prev_saturation"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.prev_saturation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.prev_temperature"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.prev_temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.prev_enthalpy"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.prev_enthalpy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.MultiphaseState.__init__"><code class="docutils literal notranslate"><span class="pre">MultiphaseState.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.PeacemanWell"><code class="docutils literal notranslate"><span class="pre">PeacemanWell</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PeacemanWell.__init__"><code class="docutils literal notranslate"><span class="pre">PeacemanWell.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PeacemanWell.compute_effective_radius"><code class="docutils literal notranslate"><span class="pre">PeacemanWell.compute_effective_radius()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PeacemanWell.compute_productivity_index"><code class="docutils literal notranslate"><span class="pre">PeacemanWell.compute_productivity_index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PeacemanWell.compute_rate"><code class="docutils literal notranslate"><span class="pre">PeacemanWell.compute_rate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PeacemanWell.apply_constraints"><code class="docutils literal notranslate"><span class="pre">PeacemanWell.apply_constraints()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.WellManager"><code class="docutils literal notranslate"><span class="pre">WellManager</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellManager.__init__"><code class="docutils literal notranslate"><span class="pre">WellManager.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellManager.add_well"><code class="docutils literal notranslate"><span class="pre">WellManager.add_well()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellManager.remove_well"><code class="docutils literal notranslate"><span class="pre">WellManager.remove_well()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellManager.compute_well_rates"><code class="docutils literal notranslate"><span class="pre">WellManager.compute_well_rates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellManager.get_well_summary"><code class="docutils literal notranslate"><span class="pre">WellManager.get_well_summary()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.WellParameters"><code class="docutils literal notranslate"><span class="pre">WellParameters</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellParameters.name"><code class="docutils literal notranslate"><span class="pre">WellParameters.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellParameters.cell_index"><code class="docutils literal notranslate"><span class="pre">WellParameters.cell_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellParameters.well_radius"><code class="docutils literal notranslate"><span class="pre">WellParameters.well_radius</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellParameters.skin_factor"><code class="docutils literal notranslate"><span class="pre">WellParameters.skin_factor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellParameters.well_depth"><code class="docutils literal notranslate"><span class="pre">WellParameters.well_depth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellParameters.__init__"><code class="docutils literal notranslate"><span class="pre">WellParameters.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.WellOperatingConditions"><code class="docutils literal notranslate"><span class="pre">WellOperatingConditions</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellOperatingConditions.constraint_type"><code class="docutils literal notranslate"><span class="pre">WellOperatingConditions.constraint_type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellOperatingConditions.target_value"><code class="docutils literal notranslate"><span class="pre">WellOperatingConditions.target_value</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellOperatingConditions.min_bhp"><code class="docutils literal notranslate"><span class="pre">WellOperatingConditions.min_bhp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellOperatingConditions.max_bhp"><code class="docutils literal notranslate"><span class="pre">WellOperatingConditions.max_bhp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellOperatingConditions.max_rate"><code class="docutils literal notranslate"><span class="pre">WellOperatingConditions.max_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WellOperatingConditions.__init__"><code class="docutils literal notranslate"><span class="pre">WellOperatingConditions.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.RelativePermeabilityModel"><code class="docutils literal notranslate"><span class="pre">RelativePermeabilityModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RelativePermeabilityModel.effective_saturation"><code class="docutils literal notranslate"><span class="pre">RelativePermeabilityModel.effective_saturation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability.krw0"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability.krw0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability.krn0"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability.krn0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability.nw"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability.nw</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability.nn"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability.nn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability.swr"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability.swr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability.snr"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability.snr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CoreyRelativePermeability.__init__"><code class="docutils literal notranslate"><span class="pre">CoreyRelativePermeability.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenMualem"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenMualem</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenMualem.n"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenMualem.n</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenMualem.swr"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenMualem.swr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenMualem.snr"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenMualem.snr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenMualem.__init__"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenMualem.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.LinearRelativePermeability"><code class="docutils literal notranslate"><span class="pre">LinearRelativePermeability</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.LinearRelativePermeability.krw0"><code class="docutils literal notranslate"><span class="pre">LinearRelativePermeability.krw0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.LinearRelativePermeability.krn0"><code class="docutils literal notranslate"><span class="pre">LinearRelativePermeability.krn0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.LinearRelativePermeability.swr"><code class="docutils literal notranslate"><span class="pre">LinearRelativePermeability.swr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.LinearRelativePermeability.snr"><code class="docutils literal notranslate"><span class="pre">LinearRelativePermeability.snr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.LinearRelativePermeability.__init__"><code class="docutils literal notranslate"><span class="pre">LinearRelativePermeability.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.StoneIRelativePermeability"><code class="docutils literal notranslate"><span class="pre">StoneIRelativePermeability</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StoneIRelativePermeability.krow_model"><code class="docutils literal notranslate"><span class="pre">StoneIRelativePermeability.krow_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StoneIRelativePermeability.krog_model"><code class="docutils literal notranslate"><span class="pre">StoneIRelativePermeability.krog_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StoneIRelativePermeability.swc"><code class="docutils literal notranslate"><span class="pre">StoneIRelativePermeability.swc</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StoneIRelativePermeability.sorw"><code class="docutils literal notranslate"><span class="pre">StoneIRelativePermeability.sorw</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.StoneIRelativePermeability.__init__"><code class="docutils literal notranslate"><span class="pre">StoneIRelativePermeability.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.CapillaryPressureModel"><code class="docutils literal notranslate"><span class="pre">CapillaryPressureModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CapillaryPressureModel.dpc_dsw"><code class="docutils literal notranslate"><span class="pre">CapillaryPressureModel.dpc_dsw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.CapillaryPressureModel.effective_saturation"><code class="docutils literal notranslate"><span class="pre">CapillaryPressureModel.effective_saturation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.BrooksCoreyPc"><code class="docutils literal notranslate"><span class="pre">BrooksCoreyPc</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BrooksCoreyPc.pd"><code class="docutils literal notranslate"><span class="pre">BrooksCoreyPc.pd</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BrooksCoreyPc.lambda_"><code class="docutils literal notranslate"><span class="pre">BrooksCoreyPc.lambda_</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BrooksCoreyPc.swr"><code class="docutils literal notranslate"><span class="pre">BrooksCoreyPc.swr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BrooksCoreyPc.snr"><code class="docutils literal notranslate"><span class="pre">BrooksCoreyPc.snr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BrooksCoreyPc.dpc_dsw"><code class="docutils literal notranslate"><span class="pre">BrooksCoreyPc.dpc_dsw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BrooksCoreyPc.__init__"><code class="docutils literal notranslate"><span class="pre">BrooksCoreyPc.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenPc"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenPc</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenPc.p0"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenPc.p0</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenPc.n"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenPc.n</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenPc.swr"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenPc.swr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenPc.snr"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenPc.snr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenPc.dpc_dsw"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenPc.dpc_dsw()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.VanGenuchtenPc.__init__"><code class="docutils literal notranslate"><span class="pre">VanGenuchtenPc.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.TransferModel"><code class="docutils literal notranslate"><span class="pre">TransferModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TransferModel.WARREN_ROOT_PSS"><code class="docutils literal notranslate"><span class="pre">TransferModel.WARREN_ROOT_PSS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TransferModel.KAZEMI_GILMAN"><code class="docutils literal notranslate"><span class="pre">TransferModel.KAZEMI_GILMAN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.TransferModel.LIM_AGUILERA"><code class="docutils literal notranslate"><span class="pre">TransferModel.LIM_AGUILERA</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.BlockGeometry"><code class="docutils literal notranslate"><span class="pre">BlockGeometry</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BlockGeometry.SLAB_X"><code class="docutils literal notranslate"><span class="pre">BlockGeometry.SLAB_X</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BlockGeometry.SLAB_Y"><code class="docutils literal notranslate"><span class="pre">BlockGeometry.SLAB_Y</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BlockGeometry.SLAB_Z"><code class="docutils literal notranslate"><span class="pre">BlockGeometry.SLAB_Z</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BlockGeometry.SLAB_RADIAL"><code class="docutils literal notranslate"><span class="pre">BlockGeometry.SLAB_RADIAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BlockGeometry.CUBE"><code class="docutils literal notranslate"><span class="pre">BlockGeometry.CUBE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BlockGeometry.SPHERE"><code class="docutils literal notranslate"><span class="pre">BlockGeometry.SPHERE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.BlockGeometry.PRISM"><code class="docutils literal notranslate"><span class="pre">BlockGeometry.PRISM</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.__init__"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.warren_root_shape_factor"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.warren_root_shape_factor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.kazemi_shape_factor"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.kazemi_shape_factor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.lim_aguilera_shape_factor"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.lim_aguilera_shape_factor()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.interporosity_flow_coefficient"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.interporosity_flow_coefficient()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.omega"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.omega()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.lambda_group"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.lambda_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.lim_aguilera_transfer_function"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.lim_aguilera_transfer_function()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.pseudo_steady_state_time"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.pseudo_steady_state_time()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.temperature_scale_permeability"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.temperature_scale_permeability()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityModel.temperature_scale_porosity"><code class="docutils literal notranslate"><span class="pre">DualPorosityModel.temperature_scale_porosity()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.phi_m"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.phi_m</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.phi_f"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.phi_f</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.k_m"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.k_m</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.k_f"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.k_f</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.Lx"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.Lx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.Ly"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.Ly</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.Lz"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.Lz</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.tau"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.tau</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.alpha_wr"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.alpha_wr</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.total_porosity"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.total_porosity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.storativity_ratio"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.storativity_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.DualPorosityParams.__init__"><code class="docutils literal notranslate"><span class="pre">DualPorosityParams.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.ThermodynamicsRegion"><code class="docutils literal notranslate"><span class="pre">ThermodynamicsRegion</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermodynamicsRegion.name"><code class="docutils literal notranslate"><span class="pre">ThermodynamicsRegion.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermodynamicsRegion.density"><code class="docutils literal notranslate"><span class="pre">ThermodynamicsRegion.density()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermodynamicsRegion.enthalpy"><code class="docutils literal notranslate"><span class="pre">ThermodynamicsRegion.enthalpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermodynamicsRegion.viscosity"><code class="docutils literal notranslate"><span class="pre">ThermodynamicsRegion.viscosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermodynamicsRegion.dh_dt"><code class="docutils literal notranslate"><span class="pre">ThermodynamicsRegion.dh_dt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.ThermodynamicsRegion.dh_dp"><code class="docutils literal notranslate"><span class="pre">ThermodynamicsRegion.dh_dp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.WaterRegion"><code class="docutils literal notranslate"><span class="pre">WaterRegion</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterRegion.name"><code class="docutils literal notranslate"><span class="pre">WaterRegion.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterRegion.__init__"><code class="docutils literal notranslate"><span class="pre">WaterRegion.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterRegion.density"><code class="docutils literal notranslate"><span class="pre">WaterRegion.density()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterRegion.enthalpy"><code class="docutils literal notranslate"><span class="pre">WaterRegion.enthalpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterRegion.viscosity"><code class="docutils literal notranslate"><span class="pre">WaterRegion.viscosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterRegion.dh_dt"><code class="docutils literal notranslate"><span class="pre">WaterRegion.dh_dt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.WaterRegion.dh_dp"><code class="docutils literal notranslate"><span class="pre">WaterRegion.dh_dp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.SteamRegion"><code class="docutils literal notranslate"><span class="pre">SteamRegion</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SteamRegion.name"><code class="docutils literal notranslate"><span class="pre">SteamRegion.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SteamRegion.__init__"><code class="docutils literal notranslate"><span class="pre">SteamRegion.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SteamRegion.density"><code class="docutils literal notranslate"><span class="pre">SteamRegion.density()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SteamRegion.enthalpy"><code class="docutils literal notranslate"><span class="pre">SteamRegion.enthalpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SteamRegion.viscosity"><code class="docutils literal notranslate"><span class="pre">SteamRegion.viscosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SteamRegion.dh_dt"><code class="docutils literal notranslate"><span class="pre">SteamRegion.dh_dt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SteamRegion.dh_dp"><code class="docutils literal notranslate"><span class="pre">SteamRegion.dh_dp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion.name"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion.__init__"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion.density"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion.density()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion.enthalpy"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion.enthalpy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion.viscosity"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion.viscosity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion.dh_dt"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion.dh_dt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SupercriticalRegion.dh_dp"><code class="docutils literal notranslate"><span class="pre">SupercriticalRegion.dh_dp()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.SaturationCurve"><code class="docutils literal notranslate"><span class="pre">SaturationCurve</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SaturationCurve.saturation_temperature"><code class="docutils literal notranslate"><span class="pre">SaturationCurve.saturation_temperature()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SaturationCurve.saturation_pressure"><code class="docutils literal notranslate"><span class="pre">SaturationCurve.saturation_pressure()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SaturationCurve.region_from_pt"><code class="docutils literal notranslate"><span class="pre">SaturationCurve.region_from_pt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.RegionThermodynamics"><code class="docutils literal notranslate"><span class="pre">RegionThermodynamics</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RegionThermodynamics.__init__"><code class="docutils literal notranslate"><span class="pre">RegionThermodynamics.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RegionThermodynamics.regions"><code class="docutils literal notranslate"><span class="pre">RegionThermodynamics.regions</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RegionThermodynamics.get_region"><code class="docutils literal notranslate"><span class="pre">RegionThermodynamics.get_region()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.RegionThermodynamics.get_properties"><code class="docutils literal notranslate"><span class="pre">RegionThermodynamics.get_properties()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.FluidThermoState"><code class="docutils literal notranslate"><span class="pre">FluidThermoState</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidThermoState.region"><code class="docutils literal notranslate"><span class="pre">FluidThermoState.region</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidThermoState.pressure"><code class="docutils literal notranslate"><span class="pre">FluidThermoState.pressure</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidThermoState.temperature"><code class="docutils literal notranslate"><span class="pre">FluidThermoState.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidThermoState.density"><code class="docutils literal notranslate"><span class="pre">FluidThermoState.density</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidThermoState.enthalpy"><code class="docutils literal notranslate"><span class="pre">FluidThermoState.enthalpy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidThermoState.viscosity"><code class="docutils literal notranslate"><span class="pre">FluidThermoState.viscosity</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.FluidThermoState.__init__"><code class="docutils literal notranslate"><span class="pre">FluidThermoState.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.SourceNode"><code class="docutils literal notranslate"><span class="pre">SourceNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNode.name"><code class="docutils literal notranslate"><span class="pre">SourceNode.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNode.cell_index"><code class="docutils literal notranslate"><span class="pre">SourceNode.cell_index</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNode.rate"><code class="docutils literal notranslate"><span class="pre">SourceNode.rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNode.phase"><code class="docutils literal notranslate"><span class="pre">SourceNode.phase</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNode.enthalpy"><code class="docutils literal notranslate"><span class="pre">SourceNode.enthalpy</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNode.active"><code class="docutils literal notranslate"><span class="pre">SourceNode.active</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNode.__init__"><code class="docutils literal notranslate"><span class="pre">SourceNode.__init__()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.Separator"><code class="docutils literal notranslate"><span class="pre">Separator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Separator.__init__"><code class="docutils literal notranslate"><span class="pre">Separator.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Separator.separation_curve"><code class="docutils literal notranslate"><span class="pre">Separator.separation_curve</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Separator.incoming_rate"><code class="docutils literal notranslate"><span class="pre">Separator.incoming_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Separator.outgoing_rates"><code class="docutils literal notranslate"><span class="pre">Separator.outgoing_rates</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Separator.separate"><code class="docutils literal notranslate"><span class="pre">Separator.separate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Separator.get_stream"><code class="docutils literal notranslate"><span class="pre">Separator.get_stream()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.Reinjector"><code class="docutils literal notranslate"><span class="pre">Reinjector</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Reinjector.__init__"><code class="docutils literal notranslate"><span class="pre">Reinjector.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Reinjector.compute_rate"><code class="docutils literal notranslate"><span class="pre">Reinjector.compute_rate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.Reinjector.injection_enthalpy"><code class="docutils literal notranslate"><span class="pre">Reinjector.injection_enthalpy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.SourceGroup"><code class="docutils literal notranslate"><span class="pre">SourceGroup</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.__init__"><code class="docutils literal notranslate"><span class="pre">SourceGroup.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.nodes"><code class="docutils literal notranslate"><span class="pre">SourceGroup.nodes</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.add_node"><code class="docutils literal notranslate"><span class="pre">SourceGroup.add_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.remove_node"><code class="docutils literal notranslate"><span class="pre">SourceGroup.remove_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.get_node"><code class="docutils literal notranslate"><span class="pre">SourceGroup.get_node()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.compute_group_rate"><code class="docutils literal notranslate"><span class="pre">SourceGroup.compute_group_rate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.allocate_rates"><code class="docutils literal notranslate"><span class="pre">SourceGroup.allocate_rates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.get_source_terms"><code class="docutils literal notranslate"><span class="pre">SourceGroup.get_source_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceGroup.get_enthalpy_terms"><code class="docutils literal notranslate"><span class="pre">SourceGroup.get_enthalpy_terms()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.SourceNetwork"><code class="docutils literal notranslate"><span class="pre">SourceNetwork</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.__init__"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.groups"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.groups</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.separators"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.separators</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.reinjectors"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.reinjectors</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.connections"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.connections</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.add_group"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.add_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.add_separator"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.add_separator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.add_reinjector"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.add_reinjector()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.connect"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.connect()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.remove_connection"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.remove_connection()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.get_group"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.get_group()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.get_separator"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.get_separator()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.get_reinjector"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.get_reinjector()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.compute_source_terms"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.compute_source_terms()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.SourceNetwork.update_from_wells"><code class="docutils literal notranslate"><span class="pre">SourceNetwork.update_from_wells()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.PETScTPFASolver"><code class="docutils literal notranslate"><span class="pre">PETScTPFASolver</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScTPFASolver.__init__"><code class="docutils literal notranslate"><span class="pre">PETScTPFASolver.__init__()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScTPFASolver.solve"><code class="docutils literal notranslate"><span class="pre">PETScTPFASolver.solve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScTPFASolver.solve_nonlinear"><code class="docutils literal notranslate"><span class="pre">PETScTPFASolver.solve_nonlinear()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScTPFASolver.get_solver_info"><code class="docutils literal notranslate"><span class="pre">PETScTPFASolver.get_solver_info()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScTPFASolver.destroy"><code class="docutils literal notranslate"><span class="pre">PETScTPFASolver.destroy()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.grid"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.grid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.comm"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.comm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.stencil_width"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.stencil_width</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.global_to_local"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.global_to_local()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.local_to_global_ijk"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.local_to_global_ijk()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.global_to_local_array"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.global_to_local_array()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.local_to_global_array"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.local_to_global_array()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.get_ownership_range"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.get_ownership_range()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.get_local_slice"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.get_local_slice()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.destroy"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.destroy()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="garuda.html#garuda.PETScDMSolver.__init__"><code class="docutils literal notranslate"><span class="pre">PETScDMSolver.__init__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

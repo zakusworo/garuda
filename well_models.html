@@ -1,0 +1,549 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Well Models (garuda.physics.well_models) &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=3469de9b"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Well Models (<code class="xref py py-mod docutils literal notranslate"><span class="pre">garuda.physics.well_models</span></code>)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/well_models.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-garuda.physics.well_models">
+<span id="well-models-garuda-physics-well-models"></span><h1>Well Models (<a class="reference internal" href="#module-garuda.physics.well_models" title="garuda.physics.well_models"><code class="xref py py-mod docutils literal notranslate"><span class="pre">garuda.physics.well_models</span></code></a>)<a class="headerlink" href="#module-garuda.physics.well_models" title="Link to this heading"></a></h1>
+<p>Peaceman Well Models for GARUDA.</p>
+<p>Implements the Peaceman productivity index method for modeling wells
+in reservoir simulation.</p>
+<dl class="simple">
+<dt>Reference:</dt><dd><p>Peaceman, D.W. (1978). “Interpretation of Well-Block Pressures in
+Numerical Reservoir Simulation.” SPE Journal, 18(3), 183-194.
+DOI: 10.2118/5130-PA</p>
+</dd>
+<dt>Features:</dt><dd><ul class="simple">
+<li><p>Productivity Index (PI) calculation</p></li>
+<li><p>Rate constraints</p></li>
+<li><p>Pressure constraints</p></li>
+<li><p>Multilateral wells</p></li>
+<li><p>Injectivity index for reinjection</p></li>
+</ul>
+</dd>
+<dt>Valid for:</dt><dd><ul class="simple">
+<li><p>Vertical wells</p></li>
+<li><p>Horizontal wells (extended)</p></li>
+<li><p>Deviated wells (with corrections)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellParameters">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">garuda.physics.well_models.</span></span><span class="sig-name descname"><span class="pre">WellParameters</span></span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellParameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellParameters" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Well completion and operating parameters.</p>
+<dl class="field-list">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>name</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">str</span></code></a></span></dt><dd><p>Well identifier</p>
+</dd>
+<dt><strong>cell_index</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">int</span></code></a></span></dt><dd><p>Grid cell index where well is completed</p>
+</dd>
+<dt><strong>well_radius</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Wellbore radius [m], typical: 0.1-0.15 m</p>
+</dd>
+<dt><strong>skin_factor</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Skin factor (dimensionless), typical: -3 to +10
+Negative = stimulated, Positive = damaged</p>
+</dd>
+<dt><strong>well_depth</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>True vertical depth [m]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellParameters.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#garuda.physics.well_models.WellParameters.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellParameters.cell_index">
+<span class="sig-name descname"><span class="pre">cell_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#garuda.physics.well_models.WellParameters.cell_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellParameters.well_radius">
+<span class="sig-name descname"><span class="pre">well_radius</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.12</span></span><a class="headerlink" href="#garuda.physics.well_models.WellParameters.well_radius" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellParameters.skin_factor">
+<span class="sig-name descname"><span class="pre">skin_factor</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#garuda.physics.well_models.WellParameters.skin_factor" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellParameters.well_depth">
+<span class="sig-name descname"><span class="pre">well_depth</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000.0</span></span><a class="headerlink" href="#garuda.physics.well_models.WellParameters.well_depth" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellParameters.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">well_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skin_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">well_depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#garuda.physics.well_models.WellParameters.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellOperatingConditions">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">garuda.physics.well_models.</span></span><span class="sig-name descname"><span class="pre">WellOperatingConditions</span></span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellOperatingConditions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellOperatingConditions" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Well operating constraints and targets.</p>
+<dl class="field-list">
+<dt class="field-odd">Attributes<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>constraint_type</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">str</span></code></a></span></dt><dd><p>‘rate’ = constant rate, ‘pressure’ = constant BHP</p>
+</dd>
+<dt><strong>target_value</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Target rate [kg/s] or BHP [Pa]</p>
+</dd>
+<dt><strong>min_bhp</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Minimum bottomhole pressure [Pa] (for producers)</p>
+</dd>
+<dt><strong>max_bhp</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Maximum bottomhole pressure [Pa] (for injectors)</p>
+</dd>
+<dt><strong>max_rate</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Maximum rate limit [kg/s]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellOperatingConditions.constraint_type">
+<span class="sig-name descname"><span class="pre">constraint_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'rate'</span></span><a class="headerlink" href="#garuda.physics.well_models.WellOperatingConditions.constraint_type" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellOperatingConditions.target_value">
+<span class="sig-name descname"><span class="pre">target_value</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#garuda.physics.well_models.WellOperatingConditions.target_value" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellOperatingConditions.min_bhp">
+<span class="sig-name descname"><span class="pre">min_bhp</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5000000.0</span></span><a class="headerlink" href="#garuda.physics.well_models.WellOperatingConditions.min_bhp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellOperatingConditions.max_bhp">
+<span class="sig-name descname"><span class="pre">max_bhp</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">30000000.0</span></span><a class="headerlink" href="#garuda.physics.well_models.WellOperatingConditions.max_bhp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellOperatingConditions.max_rate">
+<span class="sig-name descname"><span class="pre">max_rate</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100.0</span></span><a class="headerlink" href="#garuda.physics.well_models.WellOperatingConditions.max_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellOperatingConditions.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constraint_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rate'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_bhp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bhp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#garuda.physics.well_models.WellOperatingConditions.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="garuda.physics.well_models.PeacemanWell">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">garuda.physics.well_models.</span></span><span class="sig-name descname"><span class="pre">PeacemanWell</span></span><a class="reference internal" href="_modules/garuda/physics/well_models.html#PeacemanWell"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.PeacemanWell" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Peaceman well model for reservoir simulation.</p>
+<p>The Peaceman method relates well flow rate to pressure difference
+between the wellbore and the grid cell:</p>
+<blockquote>
+<div><p>q = PI * (p_cell - p_wf)</p>
+</div></blockquote>
+<dl class="simple">
+<dt>where:</dt><dd><p>q = flow rate [kg/s]
+PI = productivity index [kg/(s·Pa)]
+p_cell = grid cell pressure [Pa]
+p_wf = wellbore flowing pressure [Pa]</p>
+</dd>
+<dt>The productivity index accounts for:</dt><dd><ul class="simple">
+<li><p>Permeability</p></li>
+<li><p>Well geometry</p></li>
+<li><p>Fluid properties</p></li>
+<li><p>Skin factor</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">well</span> <span class="o">=</span> <span class="n">PeacemanWell</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">operating</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">PI</span> <span class="o">=</span> <span class="n">well</span><span class="o">.</span><span class="n">compute_productivity_index</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q</span> <span class="o">=</span> <span class="n">well</span><span class="o">.</span><span class="n">compute_rate</span><span class="p">(</span><span class="n">p_cell</span><span class="p">,</span> <span class="n">p_wf</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.PeacemanWell.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operating</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#PeacemanWell.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.PeacemanWell.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.PeacemanWell.productivity_index">
+<span class="sig-name descname"><span class="pre">productivity_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#garuda.physics.well_models.PeacemanWell.productivity_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.PeacemanWell.compute_effective_radius">
+<span class="sig-name descname"><span class="pre">compute_effective_radius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ky</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#PeacemanWell.compute_effective_radius"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.PeacemanWell.compute_effective_radius" title="Link to this definition"></a></dt>
+<dd><p>Compute Peaceman effective wellblock radius.</p>
+<p>For a vertical well in a rectangular grid cell:</p>
+<blockquote>
+<div><dl class="simple">
+<dt>r_0 = 0.28 * sqrt((k_y/k_x)^(1/2) * dx^2 + (k_x/k_y)^(1/2) * dy^2) /</dt><dd><p>((k_y/k_x)^(1/4) + (k_x/k_y)^(1/4))</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>dx, dy</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Grid cell dimensions [m]</p>
+</dd>
+<dt><strong>kx, ky</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Permeabilities in x and y directions [m²]</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt><strong>r_0</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Effective wellblock radius [m]</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.PeacemanWell.compute_productivity_index">
+<span class="sig-name descname"><span class="pre">compute_productivity_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">permeability</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">formation_volume_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#PeacemanWell.compute_productivity_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.PeacemanWell.compute_productivity_index" title="Link to this definition"></a></dt>
+<dd><p>Compute productivity index (PI).</p>
+<p>For a vertical well:</p>
+<blockquote>
+<div><p>PI = (2 * pi * k * h) / (mu * B * (ln(r_0/r_w) + S))</p>
+</div></blockquote>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>permeability</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Cell permeability [m²]</p>
+</dd>
+<dt><strong>viscosity</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Fluid viscosity [Pa·s]</p>
+</dd>
+<dt><strong>formation_volume_factor</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Formation volume factor (dimensionless), typically ~1.0 for water</p>
+</dd>
+<dt><strong>dx, dy, dz</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Grid cell dimensions [m]</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt><strong>PI</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Productivity index [kg/(s·Pa)]</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.PeacemanWell.compute_rate">
+<span class="sig-name descname"><span class="pre">compute_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_pressure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wellbore_pressure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth_difference</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#PeacemanWell.compute_rate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.PeacemanWell.compute_rate" title="Link to this definition"></a></dt>
+<dd><p>Compute well flow rate from pressure difference.</p>
+<p>q = PI * (p_cell - p_wf + rho * g * dz)</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>cell_pressure</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Grid cell pressure [Pa]</p>
+</dd>
+<dt><strong>wellbore_pressure</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Wellbore flowing pressure [Pa]</p>
+</dd>
+<dt><strong>density</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Fluid density [kg/m³]</p>
+</dd>
+<dt><strong>depth_difference</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Depth difference for gravity correction [m]</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt><strong>q</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Flow rate [kg/s] (negative = production, positive = injection).
+Producer drawdown (p_wf &lt; p_cell) yields q &lt; 0 (mass leaves the cell);
+injector overpressure (p_wf &gt; p_cell) yields q &gt; 0 (mass enters the cell).</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.PeacemanWell.apply_constraints">
+<span class="sig-name descname"><span class="pre">apply_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_pressure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#PeacemanWell.apply_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.PeacemanWell.apply_constraints" title="Link to this definition"></a></dt>
+<dd><p>Apply operating constraints to determine actual rate and BHP.</p>
+<dl class="field-list">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>rate</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Actual flow rate [kg/s]</p>
+</dd>
+<dt><strong>bhp</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Actual bottomhole pressure [Pa]</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">garuda.physics.well_models.</span></span><span class="sig-name descname"><span class="pre">WellManager</span></span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellManager" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Manager for multiple wells in reservoir simulation.</p>
+<dl class="simple">
+<dt>Handles:</dt><dd><ul class="simple">
+<li><p>Well creation and removal</p></li>
+<li><p>Rate allocation</p></li>
+<li><p>Group control</p></li>
+<li><p>Scheduling</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">manager</span> <span class="o">=</span> <span class="n">WellManager</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">manager</span><span class="o">.</span><span class="n">add_well</span><span class="p">(</span><span class="s1">&#39;PROD1&#39;</span><span class="p">,</span> <span class="n">cell_idx</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">rate</span><span class="o">=-</span><span class="mi">50</span><span class="p">)</span>  <span class="c1"># Producer</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">manager</span><span class="o">.</span><span class="n">add_well</span><span class="p">(</span><span class="s1">&#39;INJ1&#39;</span><span class="p">,</span> <span class="n">cell_idx</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">40</span><span class="p">)</span>   <span class="c1"># Injector</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rates</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">compute_well_rates</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">pressure</span><span class="p">,</span> <span class="n">fluid_props</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellManager.__init__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager.wells">
+<span class="sig-name descname"><span class="pre">wells</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#garuda.physics.well_models.PeacemanWell" title="garuda.physics.well_models.PeacemanWell"><span class="pre">PeacemanWell</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#garuda.physics.well_models.WellManager.wells" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager.well_groups">
+<span class="sig-name descname"><span class="pre">well_groups</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#garuda.physics.well_models.WellManager.well_groups" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager.add_well">
+<span class="sig-name descname"><span class="pre">add_well</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cell_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">well_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'producer'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_bhp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">well_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.12</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skin_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_bhp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bhp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellManager.add_well"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellManager.add_well" title="Link to this definition"></a></dt>
+<dd><p>Add a new well to the manager.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>name</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">str</span></code></a></span></dt><dd><p>Well name/identifier</p>
+</dd>
+<dt><strong>cell_index</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">int</span></code></a></span></dt><dd><p>Grid cell index</p>
+</dd>
+<dt><strong>well_type</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">str</span></code></a></span></dt><dd><p>‘producer’ or ‘injector’</p>
+</dd>
+<dt><strong>target_rate</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Target rate [kg/s] (negative for production)</p>
+</dd>
+<dt><strong>target_bhp</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Target BHP [Pa] (optional)</p>
+</dd>
+<dt><strong>well_radius</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Wellbore radius [m]</p>
+</dd>
+<dt><strong>skin_factor</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Skin factor</p>
+</dd>
+<dt><strong>max_rate</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Maximum rate [kg/s]</p>
+</dd>
+<dt><strong>min_bhp</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Minimum BHP [Pa]</p>
+</dd>
+<dt><strong>max_bhp</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Maximum BHP [Pa]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager.remove_well">
+<span class="sig-name descname"><span class="pre">remove_well</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellManager.remove_well"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellManager.remove_well" title="Link to this definition"></a></dt>
+<dd><p>Remove a well from the manager.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager.compute_well_rates">
+<span class="sig-name descname"><span class="pre">compute_well_rates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pressure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viscosity</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellManager.compute_well_rates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellManager.compute_well_rates" title="Link to this definition"></a></dt>
+<dd><p>Compute source terms from all wells.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><dl>
+<dt><strong>grid</strong><span class="classifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Grid</span></code></span></dt><dd><p>Reservoir grid</p>
+</dd>
+<dt><strong>pressure</strong><span class="classifier"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></dt><dd><p>Cell pressures [Pa]</p>
+</dd>
+<dt><strong>density</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Fluid density [kg/m³]</p>
+</dd>
+<dt><strong>viscosity</strong><span class="classifier"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><code class="docutils literal notranslate"><span class="pre">float</span></code></a></span></dt><dd><p>Fluid viscosity [Pa·s]</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><dl>
+<dt><strong>source_terms</strong><span class="classifier"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></dt><dd><p>Well source/sink terms [kg/s] for each cell</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.4)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="garuda.physics.well_models.WellManager.get_well_summary">
+<span class="sig-name descname"><span class="pre">get_well_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/garuda/physics/well_models.html#WellManager.get_well_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#garuda.physics.well_models.WellManager.get_well_summary" title="Link to this definition"></a></dt>
+<dd><p>Get summary of all wells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,427 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.core.rock_properties &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.core.rock_properties</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.core.rock_properties</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Rock properties module - Permeability, porosity, and rock mechanics.</span>
+
+<span class="sd">Supports heterogeneous and anisotropic reservoirs.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="RockProperties">
+<a class="viewcode-back" href="../../../rock_properties.html#garuda.RockProperties">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RockProperties</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rock properties for reservoir simulation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    porosity : float or ndarray</span>
+<span class="sd">        Porosity (dimensionless, 0-1)</span>
+<span class="sd">    permeability : float or ndarray</span>
+<span class="sd">        Permeability [m²] or [Darcy]</span>
+<span class="sd">    permeability_unit : str</span>
+<span class="sd">        Unit of permeability: &#39;m2&#39;, &#39;darcy&#39;, &#39;md&#39; (millidarcy)</span>
+<span class="sd">    c_rock : float</span>
+<span class="sd">        Rock compressibility [1/Pa]</span>
+<span class="sd">    cp : float</span>
+<span class="sd">        Rock heat capacity [J/(kg·K)]</span>
+<span class="sd">    rho_rock : float</span>
+<span class="sd">        Rock density [kg/m³]</span>
+<span class="sd">    lambda_rock : float</span>
+<span class="sd">        Rock thermal conductivity [W/(m·K)]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">porosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="mf">0.2</span>
+    <span class="n">permeability</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="mf">1e-12</span>  <span class="c1"># 1 Darcy default</span>
+    <span class="n">permeability_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;m2&quot;</span>
+    <span class="n">c_rock</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-9</span>  <span class="c1"># Rock compressibility [1/Pa]</span>
+    <span class="n">cp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">840</span>  <span class="c1"># Heat capacity [J/(kg·K)] for sandstone</span>
+    <span class="n">rho_rock</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">2650</span>  <span class="c1"># Density [kg/m³] for sandstone</span>
+    <span class="n">lambda_rock</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.5</span>  <span class="c1"># Thermal conductivity [W/(m·K)]</span>
+
+    <span class="c1"># Anisotropy ratios (kx:ky:kz)</span>
+    <span class="n">k_ratio</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>  <span class="c1"># Typical: kz &lt;&lt; kx, ky</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert permeability to SI units and set up tensors.&quot;&quot;&quot;</span>
+        <span class="c1"># Convert to m²</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">permeability_unit</span> <span class="o">==</span> <span class="s2">&quot;darcy&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">permeability_m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">permeability</span><span class="p">)</span> <span class="o">*</span> <span class="mf">9.869233e-13</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">permeability_unit</span> <span class="o">==</span> <span class="s2">&quot;md&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">permeability_m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">permeability</span><span class="p">)</span> <span class="o">*</span> <span class="mf">9.869233e-16</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># &#39;m2&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">permeability_m2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">permeability</span><span class="p">)</span>
+
+        <span class="c1"># Build permeability tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_build_perm_tensor</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_perm_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build full permeability tensor for each cell.&quot;&quot;&quot;</span>
+        <span class="n">perm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">permeability_m2</span>
+
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span> <span class="ow">or</span> <span class="n">perm</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Homogeneous isotropic</span>
+            <span class="n">perm_val</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k_ratio</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">perm_val</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">perm</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Heterogeneous isotropic (one value per cell)</span>
+            <span class="n">n_cells</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">perm</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_cells</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">perm</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_ratio</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">perm</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">perm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c1"># Anisotropic (kx, ky, kz per cell)</span>
+            <span class="n">n_cells</span> <span class="o">=</span> <span class="n">perm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_cells</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">perm</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+
+        <span class="k">elif</span> <span class="n">perm</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="c1"># Full tensor already provided</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perm_tensor</span> <span class="o">=</span> <span class="n">perm</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid permeability shape: </span><span class="si">{</span><span class="n">perm</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="RockProperties.set_heterogeneous">
+<a class="viewcode-back" href="../../../rock_properties.html#garuda.RockProperties.set_heterogeneous">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_heterogeneous</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">porosity</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">permeability</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">permeability_unit</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set heterogeneous properties.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        porosity : ndarray</span>
+<span class="sd">            Porosity per cell</span>
+<span class="sd">        permeability : ndarray</span>
+<span class="sd">            Permeability per cell</span>
+<span class="sd">        permeability_unit : str</span>
+<span class="sd">            Unit of permeability</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">porosity</span> <span class="o">=</span> <span class="n">porosity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">permeability</span> <span class="o">=</span> <span class="n">permeability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">permeability_unit</span> <span class="o">=</span> <span class="n">permeability_unit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__post_init__</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="RockProperties.set_channelized_permeability">
+<a class="viewcode-back" href="../../../rock_properties.html#garuda.RockProperties.set_channelized_permeability">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_channelized_permeability</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">nx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">ny</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">nz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">channel_orientation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span>
+        <span class="n">channel_fraction</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">k_channel</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+        <span class="n">k_background</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate channelized permeability field.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nx, ny, nz : int</span>
+<span class="sd">            Grid dimensions</span>
+<span class="sd">        channel_orientation : str</span>
+<span class="sd">            Direction of channels: &#39;x&#39;, &#39;y&#39;, or &#39;z&#39;</span>
+<span class="sd">        channel_fraction : float</span>
+<span class="sd">            Fraction of cells that are channels</span>
+<span class="sd">        k_channel : float</span>
+<span class="sd">            Channel permeability [md]</span>
+<span class="sd">        k_background : float</span>
+<span class="sd">            Background permeability [md]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Use a local Generator so we don&#39;t mutate the global numpy RNG.</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">channel_orientation</span> <span class="o">==</span> <span class="s2">&quot;x&quot;</span><span class="p">:</span>
+            <span class="c1"># Channels aligned in x-direction</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+                    <span class="n">is_channel</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">channel_fraction</span>
+                    <span class="n">perm</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_channel</span> <span class="k">if</span> <span class="n">is_channel</span> <span class="k">else</span> <span class="n">k_background</span>
+
+        <span class="k">elif</span> <span class="n">channel_orientation</span> <span class="o">==</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+                    <span class="n">is_channel</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">channel_fraction</span>
+                    <span class="n">perm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_channel</span> <span class="k">if</span> <span class="n">is_channel</span> <span class="k">else</span> <span class="n">k_background</span>
+
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># &#39;z&#39;</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                    <span class="n">is_channel</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">channel_fraction</span>
+                    <span class="n">perm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">k_channel</span> <span class="k">if</span> <span class="n">is_channel</span> <span class="k">else</span> <span class="n">k_background</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_heterogeneous</span><span class="p">(</span>
+            <span class="n">porosity</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">porosity</span><span class="p">),</span>
+            <span class="n">permeability</span><span class="o">=</span><span class="n">perm</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span>
+            <span class="n">permeability_unit</span><span class="o">=</span><span class="s2">&quot;md&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RockProperties.set_gaussian_permeability">
+<a class="viewcode-back" href="../../../rock_properties.html#garuda.RockProperties.set_gaussian_permeability">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_gaussian_permeability</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">nx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">ny</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">nz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">mean_logk</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
+        <span class="n">std_logk</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">correlation_length</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate Gaussian random permeability field.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nx, ny, nz : int</span>
+<span class="sd">            Grid dimensions</span>
+<span class="sd">        mean_logk : float</span>
+<span class="sd">            Mean of log10(k) [md]</span>
+<span class="sd">        std_logk : float</span>
+<span class="sd">            Standard deviation of log10(k)</span>
+<span class="sd">        correlation_length : float</span>
+<span class="sd">            Correlation length (fraction of domain)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ndimage</span>
+
+        <span class="c1"># Generate white noise in log-permeability</span>
+        <span class="n">logk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean_logk</span><span class="p">,</span> <span class="n">std_logk</span><span class="p">,</span> <span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">))</span>
+
+        <span class="c1"># Apply Gaussian filter for spatial correlation</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">correlation_length</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">)</span>
+        <span class="n">logk_smooth</span> <span class="o">=</span> <span class="n">ndimage</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span><span class="n">logk</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+
+        <span class="c1"># Convert to permeability</span>
+        <span class="n">perm</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="n">logk_smooth</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_heterogeneous</span><span class="p">(</span>
+            <span class="n">porosity</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">porosity</span><span class="p">),</span>
+            <span class="n">permeability</span><span class="o">=</span><span class="n">perm</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span>
+            <span class="n">permeability_unit</span><span class="o">=</span><span class="s2">&quot;md&quot;</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="RockProperties.total_compressibility">
+<a class="viewcode-back" href="../../../rock_properties.html#garuda.RockProperties.total_compressibility">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total_compressibility</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fluid_compressibility</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute total compressibility (rock + fluid).</span>
+
+<span class="sd">        c_t = c_rock + φ * c_fluid</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fluid_compressibility : float</span>
+<span class="sd">            Fluid compressibility [1/Pa]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        c_t : float or ndarray</span>
+<span class="sd">            Total compressibility [1/Pa]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">porosity</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_rock</span> <span class="o">+</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">fluid_compressibility</span></div>
+
+
+<div class="viewcode-block" id="RockProperties.heat_capacity_bulk">
+<a class="viewcode-back" href="../../../rock_properties.html#garuda.RockProperties.heat_capacity_bulk">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">heat_capacity_bulk</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fluid_cp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">fluid_rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute bulk heat capacity of rock-fluid system.</span>
+
+<span class="sd">        (ρCp)_bulk = (1-φ) * ρ_rock * Cp_rock + φ * ρ_fluid * Cp_fluid</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fluid_cp : float</span>
+<span class="sd">            Fluid specific heat [J/(kg·K)]</span>
+<span class="sd">        fluid_rho : float</span>
+<span class="sd">            Fluid density [kg/m³]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rhoCp : float or ndarray</span>
+<span class="sd">            Bulk heat capacity [J/(m³·K)] — scalar for homogeneous porosity,</span>
+<span class="sd">            per-cell array if porosity (or fluid_rho) is heterogeneous.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">porosity</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">phi</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho_rock</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">cp</span> <span class="o">+</span> <span class="n">phi</span> <span class="o">*</span> <span class="n">fluid_rho</span> <span class="o">*</span> <span class="n">fluid_cp</span></div>
+
+
+<div class="viewcode-block" id="RockProperties.thermal_diffusivity">
+<a class="viewcode-back" href="../../../rock_properties.html#garuda.RockProperties.thermal_diffusivity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thermal_diffusivity</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">fluid_cp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">fluid_rho</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute thermal diffusivity.</span>
+
+<span class="sd">        alpha = lambda / (ρCp)_bulk</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        fluid_cp : float</span>
+<span class="sd">            Fluid specific heat [J/(kg·K)]</span>
+<span class="sd">        fluid_rho : float</span>
+<span class="sd">            Fluid density [kg/m³]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        alpha : float</span>
+<span class="sd">            Thermal diffusivity [m²/s]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rhoCp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heat_capacity_bulk</span><span class="p">(</span><span class="n">fluid_cp</span><span class="p">,</span> <span class="n">fluid_rho</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_rock</span> <span class="o">/</span> <span class="n">rhoCp</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

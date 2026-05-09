@@ -1,0 +1,602 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.core.iapws_properties &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.core.iapws_properties</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.core.iapws_properties</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;IAPWS-97 Water/Steam Properties Module for GARUDA.</span>
+
+<span class="sd">Implements the International Association for the Properties of Water and Steam</span>
+<span class="sd">(IAPWS) Industrial Formulation 1997 for thermophysical properties of water and steam.</span>
+
+<span class="sd">Valid ranges:</span>
+<span class="sd">    - Temperature: 273.15 K to 1073.15 K</span>
+<span class="sd">    - Pressure: 0 to 100 MPa</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">_R_GAS</span> <span class="o">=</span> <span class="mf">0.461526</span>  <span class="c1"># Specific gas constant [kJ/(kg·K)]</span>
+
+
+<div class="viewcode-block" id="WaterSteamProperties">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WaterSteamProperties</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;IAPWS-97 water/steam property calculator.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cache</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># REGION IDENTIFICATION</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.get_region">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.get_region">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine IAPWS-97 region.</span>
+<span class="sd">        Returns: 1=liquid, 2=vapor, 3=supercritical, 4=saturation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p_sat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saturation_pressure</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">Tc</span> <span class="o">=</span> <span class="mf">647.096</span>
+        <span class="n">Pc</span> <span class="o">=</span> <span class="mf">22.064</span>
+
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&lt;</span> <span class="n">Tc</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="n">p_sat</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">T</span> <span class="o">&lt;</span> <span class="mf">1073.15</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="n">p_sat</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">2</span>
+            <span class="k">elif</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="mi">100</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">3</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">2</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># SATURATION PROPERTIES</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.saturation_pressure">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.saturation_pressure">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">saturation_pressure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saturation pressure [MPa] via IAPWS-IF97 region-4 backward equation.</span>
+<span class="sd">        Valid:  273.15 K &lt;= T &lt;= 647.096 K.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Tc</span> <span class="o">=</span> <span class="mf">647.096</span>
+        <span class="n">Pc</span> <span class="o">=</span> <span class="mf">22.064</span>
+
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&gt;=</span> <span class="n">Tc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Pc</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&lt;</span> <span class="mf">273.15</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="n">theta</span> <span class="o">=</span> <span class="n">T</span> <span class="o">/</span> <span class="n">Tc</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">theta</span>
+
+        <span class="c1"># IAPWS-IF97 saturation-pressure coefficients</span>
+        <span class="n">J</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">7.5</span><span class="p">]</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">7.85951783</span><span class="p">,</span> <span class="mf">1.84408259</span><span class="p">,</span> <span class="o">-</span><span class="mf">11.7866497</span><span class="p">,</span> <span class="mf">22.6807411</span><span class="p">,</span> <span class="o">-</span><span class="mf">15.9618719</span><span class="p">,</span> <span class="mf">1.80122502</span><span class="p">]</span>
+
+        <span class="n">ln_pi</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ni</span> <span class="o">*</span> <span class="p">(</span><span class="n">tau</span><span class="o">**</span><span class="n">Ji</span><span class="p">)</span> <span class="k">for</span> <span class="n">ni</span><span class="p">,</span> <span class="n">Ji</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">J</span><span class="p">))</span>
+        <span class="n">p_sat</span> <span class="o">=</span> <span class="n">Pc</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">theta</span><span class="p">)</span> <span class="o">*</span> <span class="n">ln_pi</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p_sat</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.saturation_temperature">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.saturation_temperature">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">saturation_temperature</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saturation temperature [K] via IAPWS-IF97 region-4 backward equation.</span>
+
+<span class="sd">        Valid range: 611.213 Pa &lt;= p &lt;= 22.064 MPa (triple point → critical</span>
+<span class="sd">        point). Uses the full 10-coefficient form from IR-IF97 (2007), with</span>
+<span class="sd">        the standard reducing pressure p* = 1 MPa.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Tc</span> <span class="o">=</span> <span class="mf">647.096</span>  <span class="c1"># K</span>
+        <span class="n">Pc</span> <span class="o">=</span> <span class="mf">22.064</span>  <span class="c1"># MPa</span>
+
+        <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;=</span> <span class="n">Pc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Tc</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">273.15</span>
+
+        <span class="c1"># IAPWS-IF97 region 4 backward equation T_sat(p):</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="mf">0.11670521452767e4</span><span class="p">,</span>    <span class="c1"># n1</span>
+            <span class="o">-</span><span class="mf">0.72421316703206e6</span><span class="p">,</span>   <span class="c1"># n2</span>
+            <span class="o">-</span><span class="mf">0.17073846940092e2</span><span class="p">,</span>   <span class="c1"># n3</span>
+            <span class="mf">0.12020824702470e5</span><span class="p">,</span>    <span class="c1"># n4</span>
+            <span class="o">-</span><span class="mf">0.32325550322333e7</span><span class="p">,</span>   <span class="c1"># n5</span>
+            <span class="mf">0.14915108613530e2</span><span class="p">,</span>    <span class="c1"># n6</span>
+            <span class="o">-</span><span class="mf">0.48232657361591e4</span><span class="p">,</span>   <span class="c1"># n7</span>
+            <span class="mf">0.40511340542057e6</span><span class="p">,</span>    <span class="c1"># n8</span>
+            <span class="o">-</span><span class="mf">0.23855557567849e0</span><span class="p">,</span>   <span class="c1"># n9</span>
+            <span class="mf">0.65017534844798e3</span><span class="p">,</span>    <span class="c1"># n10</span>
+        <span class="p">)</span>
+        <span class="c1"># Reducing pressure p* = 1 MPa, so beta = p^(1/4) with p in MPa.</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">p</span> <span class="o">**</span> <span class="mf">0.25</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">+</span> <span class="n">n</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">+</span> <span class="n">n</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">F</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">+</span> <span class="n">n</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">+</span> <span class="n">n</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">n</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">+</span> <span class="n">n</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">*</span> <span class="n">beta</span> <span class="o">+</span> <span class="n">n</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+        <span class="c1"># Clamp against round-off near p ≈ Pc.</span>
+        <span class="n">disc</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">F</span> <span class="o">*</span> <span class="n">F</span> <span class="o">-</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="n">E</span> <span class="o">*</span> <span class="n">G</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">D</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">G</span> <span class="o">/</span> <span class="p">(</span><span class="o">-</span><span class="n">F</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">disc</span><span class="p">))</span>
+        <span class="n">inner</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="n">n</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">+</span> <span class="n">D</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">-</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">+</span> <span class="n">n</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">*</span> <span class="n">D</span><span class="p">),</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">n</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="o">+</span> <span class="n">D</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">inner</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.saturation_density_liquid">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.saturation_density_liquid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">saturation_density_liquid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saturated liquid density [kg/m³] — Wagner &amp; Pruss (2002) auxiliary</span>
+<span class="sd">        equation (also used by IAPWS-IF97 region 4).&quot;&quot;&quot;</span>
+        <span class="n">Tc</span> <span class="o">=</span> <span class="mf">647.096</span>
+        <span class="n">rhoc</span> <span class="o">=</span> <span class="mf">322.0</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&gt;=</span> <span class="n">Tc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rhoc</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">T</span> <span class="o">/</span> <span class="n">Tc</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="c1"># Coefficients and exponents per Wagner &amp; Pruss / IAPWS-95 release.</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.99274064</span><span class="p">,</span> <span class="mf">1.09965342</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.510839303</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.75493479</span><span class="p">,</span> <span class="o">-</span><span class="mf">45.5170352</span><span class="p">,</span> <span class="o">-</span><span class="mf">6.74694450e5</span><span class="p">]</span>
+        <span class="n">exps</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mi">5</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mi">16</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mi">43</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mi">110</span> <span class="o">/</span> <span class="mf">3.0</span><span class="p">]</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">bi</span> <span class="o">*</span> <span class="n">tau</span><span class="o">**</span><span class="n">ei</span> <span class="k">for</span> <span class="n">bi</span><span class="p">,</span> <span class="n">ei</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">exps</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">rhoc</span> <span class="o">*</span> <span class="n">rho</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.saturation_density_vapor">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.saturation_density_vapor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">saturation_density_vapor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Saturated vapor density [kg/m³] — Wagner &amp; Pruss (2002) auxiliary</span>
+<span class="sd">        equation.&quot;&quot;&quot;</span>
+        <span class="n">Tc</span> <span class="o">=</span> <span class="mf">647.096</span>
+        <span class="n">rhoc</span> <span class="o">=</span> <span class="mf">322.0</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&gt;=</span> <span class="n">Tc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rhoc</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">T</span> <span class="o">/</span> <span class="n">Tc</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="c1"># Coefficients and exponents per Wagner &amp; Pruss / IAPWS-95 release.</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mf">2.03150240</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.68302940</span><span class="p">,</span> <span class="o">-</span><span class="mf">5.38626492</span><span class="p">,</span> <span class="o">-</span><span class="mf">17.2991605</span><span class="p">,</span> <span class="o">-</span><span class="mf">44.6384722</span><span class="p">,</span> <span class="o">-</span><span class="mf">64.0985368</span><span class="p">]</span>
+        <span class="n">exps</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mi">4</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mi">8</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mi">18</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mi">37</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">,</span> <span class="mi">71</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">]</span>
+        <span class="n">ln_rho</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ci</span> <span class="o">*</span> <span class="n">tau</span><span class="o">**</span><span class="n">ei</span> <span class="k">for</span> <span class="n">ci</span><span class="p">,</span> <span class="n">ei</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">exps</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">rhoc</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ln_rho</span><span class="p">)</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># DENSITY</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.density">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.density">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Density [kg/m³] at given pressure [MPa] and temperature [K].&quot;&quot;&quot;</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_region</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_region1</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_region2</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_region3</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">saturation_density_liquid</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">1000.0</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.density_region1">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.density_region1">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density_region1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Liquid water density — empirical polynomial fit to IAPWS-IF97 data.</span>
+
+<span class="sd">        Accepts scalar or array inputs for ``p`` (MPa) and ``T`` (K) and</span>
+<span class="sd">        broadcasts elementwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rho0</span> <span class="o">=</span> <span class="mf">999.842</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">T</span><span class="p">)</span> <span class="o">-</span> <span class="mf">273.15</span>
+        <span class="c1"># Thermal expansion</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">rho0</span> <span class="o">-</span> <span class="mf">0.0675</span> <span class="o">*</span> <span class="n">t</span> <span class="o">-</span> <span class="mf">0.00352</span> <span class="o">*</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="mf">7.9e-6</span> <span class="o">*</span> <span class="n">t</span><span class="o">**</span><span class="mi">3</span>
+        <span class="c1"># Pressure compressibility</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e6</span> <span class="o">/</span> <span class="mf">2.2e9</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="mf">600.0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.density_region2">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.density_region2">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density_region2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Steam/vapor density via ideal gas + simple compressibility correction.</span>
+
+<span class="sd">        Z must approach 1 as p → 0; using ``Z = 0.9 - …`` over-estimates</span>
+<span class="sd">        density by ~10 % at low pressure. Linear correction in p with</span>
+<span class="sd">        Z(0)=1 keeps the limit consistent and stays within a few percent</span>
+<span class="sd">        of IAPWS-IF97 region 2 across the sub-critical range.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="n">_R_GAS</span> <span class="o">*</span> <span class="mi">1000</span>  <span class="c1"># J/(kg·K)</span>
+        <span class="n">rho_ideal</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="mf">1e6</span> <span class="o">/</span> <span class="p">(</span><span class="n">R</span> <span class="o">*</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span> <span class="o">/</span> <span class="mf">30.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">rho_ideal</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">Z</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.density_region3">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.density_region3">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density_region3</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Supercritical density.&quot;&quot;&quot;</span>
+        <span class="n">Tc</span> <span class="o">=</span> <span class="mf">647.096</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="n">Tc</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">322.0</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&lt;</span> <span class="n">Tc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_region1</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_region2</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># VISCOSITY</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.viscosity">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.viscosity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">viscosity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Dynamic viscosity [Pa·s].&quot;&quot;&quot;</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_region</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">viscosity_liquid</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">viscosity_vapor</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">viscosity_liquid</span><span class="p">(</span><span class="n">T</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.viscosity_liquid">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.viscosity_liquid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">viscosity_liquid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Liquid water viscosity [Pa·s] - Arrhenius form.&quot;&quot;&quot;</span>
+        <span class="n">T_ref</span> <span class="o">=</span> <span class="mf">647.096</span>
+        <span class="n">mu_ref</span> <span class="o">=</span> <span class="mf">55.071e-6</span>
+        <span class="c1"># Empirical fit: gives ~0.001 Pa·s at 20 °C, ~0.0001 Pa·s at 250 °C</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="mf">1553.0</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">mu_ref</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">T</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">T_ref</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="mf">50e-6</span><span class="p">,</span> <span class="mf">2e-3</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.viscosity_vapor">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.viscosity_vapor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">viscosity_vapor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Steam viscosity [Pa·s] via Sutherland formula.&quot;&quot;&quot;</span>
+        <span class="n">T_ref</span> <span class="o">=</span> <span class="mf">373.15</span>
+        <span class="n">mu_ref</span> <span class="o">=</span> <span class="mf">12.1e-6</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="mf">960.0</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="n">mu_ref</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span> <span class="o">/</span> <span class="n">T_ref</span><span class="p">)</span> <span class="o">**</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_ref</span> <span class="o">+</span> <span class="n">S</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">T</span> <span class="o">+</span> <span class="n">S</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mu</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># ENTHALPY</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.enthalpy">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.enthalpy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enthalpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specific enthalpy [kJ/kg].&quot;&quot;&quot;</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_region</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_liquid</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_vapor</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy_liquid</span><span class="p">(</span><span class="n">T</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.enthalpy_liquid">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.enthalpy_liquid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enthalpy_liquid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Liquid water sensible heat [kJ/kg].&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">4.18</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mf">273.15</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaterSteamProperties.enthalpy_vapor">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.enthalpy_vapor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enthalpy_vapor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Steam enthalpy [kJ/kg].&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">419.0</span> <span class="o">+</span> <span class="mf">2257.0</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mf">373.15</span><span class="p">)</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># SPECIFIC HEAT</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.specific_heat_cp">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.specific_heat_cp">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">specific_heat_cp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Specific heat at constant pressure [kJ/(kg·K)].&quot;&quot;&quot;</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_region</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">4.18</span>
+        <span class="k">elif</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">2.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">3.0</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># THERMAL CONDUCTIVITY</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.thermal_conductivity">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.thermal_conductivity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">thermal_conductivity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Thermal conductivity [W/(m·K)].&quot;&quot;&quot;</span>
+        <span class="n">region</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_region</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="mf">0.56</span> <span class="o">+</span> <span class="mf">0.001</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mi">300</span><span class="p">)</span> <span class="o">-</span> <span class="mf">2e-6</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mi">300</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">region</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.02</span> <span class="o">+</span> <span class="mf">5e-5</span> <span class="o">*</span> <span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="mi">373</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.6</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># PHASE IDENTIFICATION</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.phase">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.phase">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Phase id: &#39;liquid&#39;, &#39;vapor&#39;, &#39;supercritical&#39;, &#39;two-phase&#39;.&quot;&quot;&quot;</span>
+        <span class="n">p_sat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saturation_pressure</span><span class="p">(</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">Tc</span><span class="p">,</span> <span class="n">Pc</span> <span class="o">=</span> <span class="mf">647.096</span><span class="p">,</span> <span class="mf">22.064</span>
+        <span class="k">if</span> <span class="n">T</span> <span class="o">&gt;</span> <span class="n">Tc</span> <span class="ow">and</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="n">Pc</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;supercritical&quot;</span>
+        <span class="k">elif</span> <span class="nb">abs</span><span class="p">(</span><span class="n">p</span> <span class="o">-</span> <span class="n">p_sat</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">0.01</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;two-phase&quot;</span>
+        <span class="k">elif</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="n">p_sat</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;liquid&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;vapor&quot;</span></div>
+
+
+    <span class="c1"># =====================================================================</span>
+    <span class="c1"># CONVENIENCE METHODS</span>
+    <span class="c1"># =====================================================================</span>
+
+<div class="viewcode-block" id="WaterSteamProperties.get_all_properties">
+<a class="viewcode-back" href="../../../garuda.html#garuda.WaterSteamProperties.get_all_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get all thermophysical properties at once.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;pressure&quot;</span><span class="p">:</span> <span class="n">p</span><span class="p">,</span>
+            <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
+            <span class="s2">&quot;density&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">density</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">),</span>
+            <span class="s2">&quot;viscosity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">viscosity</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">),</span>
+            <span class="s2">&quot;enthalpy&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">enthalpy</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">),</span>
+            <span class="s2">&quot;specific_heat_cp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">specific_heat_cp</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">),</span>
+            <span class="s2">&quot;thermal_conductivity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">thermal_conductivity</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">),</span>
+            <span class="s2">&quot;phase&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">),</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="IAPWSFluidProperties">
+<a class="viewcode-back" href="../../../garuda.html#garuda.IAPWSFluidProperties">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">IAPWSFluidProperties</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;IAPWS-97 fluid properties wrapper for GARUDA solver.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IAPWSFluidProperties.__init__">
+<a class="viewcode-back" href="../../../garuda.html#garuda.IAPWSFluidProperties.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iapws</span> <span class="o">=</span> <span class="n">WaterSteamProperties</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="IAPWSFluidProperties.get_properties">
+<a class="viewcode-back" href="../../../garuda.html#garuda.IAPWSFluidProperties.get_properties">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get viscosity and density for TPFA solver.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        p : float</span>
+<span class="sd">            Pressure [Pa]</span>
+<span class="sd">        T : float</span>
+<span class="sd">            Temperature [K]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mu : float</span>
+<span class="sd">            Viscosity [Pa·s]</span>
+<span class="sd">        rho : float</span>
+<span class="sd">            Density [kg/m³]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">p_mpa</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="mf">1e6</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iapws</span><span class="o">.</span><span class="n">density</span><span class="p">(</span><span class="n">p_mpa</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iapws</span><span class="o">.</span><span class="n">viscosity</span><span class="p">(</span><span class="n">p_mpa</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">mu</span><span class="p">,</span> <span class="n">rho</span></div>
+
+
+<div class="viewcode-block" id="IAPWSFluidProperties.get_density">
+<a class="viewcode-back" href="../../../garuda.html#garuda.IAPWSFluidProperties.get_density">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">p_mpa</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="mf">1e6</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iapws</span><span class="o">.</span><span class="n">density</span><span class="p">(</span><span class="n">p_mpa</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IAPWSFluidProperties.get_viscosity">
+<a class="viewcode-back" href="../../../garuda.html#garuda.IAPWSFluidProperties.get_viscosity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_viscosity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">p_mpa</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="mf">1e6</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iapws</span><span class="o">.</span><span class="n">viscosity</span><span class="p">(</span><span class="n">p_mpa</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="IAPWSFluidProperties.get_enthalpy">
+<a class="viewcode-back" href="../../../garuda.html#garuda.IAPWSFluidProperties.get_enthalpy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_enthalpy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="n">p_mpa</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="mf">1e6</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">iapws</span><span class="o">.</span><span class="n">enthalpy</span><span class="p">(</span><span class="n">p_mpa</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>  <span class="c1"># J/kg</span></div>
+
+
+<div class="viewcode-block" id="IAPWSFluidProperties.get_all">
+<a class="viewcode-back" href="../../../garuda.html#garuda.IAPWSFluidProperties.get_all">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">T</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">p_mpa</span> <span class="o">=</span> <span class="n">p</span> <span class="o">/</span> <span class="mf">1e6</span>
+        <span class="n">props</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iapws</span><span class="o">.</span><span class="n">get_all_properties</span><span class="p">(</span><span class="n">p_mpa</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;enthalpy&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">1000</span>
+        <span class="n">props</span><span class="p">[</span><span class="s2">&quot;pressure&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="mf">1e6</span>
+        <span class="k">return</span> <span class="n">props</span></div>
+</div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># DEMO</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;IAPWS-97 Water/Steam Properties Demo&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="n">props</span> <span class="o">=</span> <span class="n">WaterSteamProperties</span><span class="p">()</span>
+
+    <span class="n">conditions</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">453</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">500</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">550</span><span class="p">),</span>
+        <span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="mi">600</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">T</span> <span class="ow">in</span> <span class="n">conditions</span><span class="p">:</span>
+        <span class="n">all_props</span> <span class="o">=</span> <span class="n">props</span><span class="o">.</span><span class="n">get_all_properties</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">P = </span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> MPa, T = </span><span class="si">{</span><span class="n">T</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2"> K (</span><span class="si">{</span><span class="n">T</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">273.15</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">°C)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Phase: </span><span class="si">{</span><span class="n">all_props</span><span class="p">[</span><span class="s1">&#39;phase&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Density: </span><span class="si">{</span><span class="n">all_props</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> kg/m³&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Viscosity: </span><span class="si">{</span><span class="n">all_props</span><span class="p">[</span><span class="s1">&#39;viscosity&#39;</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e6</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> µPa·s&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Enthalpy: </span><span class="si">{</span><span class="n">all_props</span><span class="p">[</span><span class="s1">&#39;enthalpy&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> kJ/kg&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Cp: </span><span class="si">{</span><span class="n">all_props</span><span class="p">[</span><span class="s1">&#39;specific_heat_cp&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> kJ/(kg·K)&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  k: </span><span class="si">{</span><span class="n">all_props</span><span class="p">[</span><span class="s1">&#39;thermal_conductivity&#39;</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> W/(m·K)&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;IAPWS-97 demo completed!&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,925 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.solvers.petsc_solver &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.solvers.petsc_solver</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.solvers.petsc_solver</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;PETSc solver backend for GARUDA.</span>
+
+<span class="sd">Wraps PETSc (Portable Extensible Toolkit for Scientific Computation) via</span>
+<span class="sd">petsc4py to provide distributed-memory linear / non-linear solvers,</span>
+<span class="sd">algebraic multigrid preconditioners, and ghost-cell exchange for</span>
+<span class="sd">large-scale reservoir simulation.</span>
+
+<span class="sd">Typical usage::</span>
+
+<span class="sd">    from garuda import StructuredGrid</span>
+<span class="sd">    from garuda.solvers import PETScTPFASolver, has_petsc</span>
+
+<span class="sd">    if not has_petsc:</span>
+<span class="sd">        raise RuntimeError(&quot;PETSc not available&quot;)</span>
+
+<span class="sd">    grid = StructuredGrid(nx=100, ny=100, nz=10, dx=10.0, dy=10.0, dz=5.0)</span>
+<span class="sd">    grid.set_permeability(1e-14)</span>
+<span class="sd">    grid.set_porosity(0.2)</span>
+
+<span class="sd">    solver = PETScTPFASolver(grid, mu=1e-3, rho=1000.0)</span>
+<span class="sd">    source = np.zeros(grid.num_cells)</span>
+<span class="sd">    bc_values = np.array([200e5, 100e5])</span>
+<span class="sd">    pressure = solver.solve(source, bc_type=&quot;dirichlet&quot;, bc_values=bc_values)</span>
+
+<span class="sd">On a multi-core workstation the constructor automatically creates an MPI</span>
+<span class="sd">communicator; on a cluster launch with::</span>
+
+<span class="sd">    mpirun -np 8 python run_sim.py</span>
+
+<span class="sd">Notes</span>
+<span class="sd">-----</span>
+<span class="sd">- ``petsc4py`` must be installed *after* a system PETSc build that</span>
+<span class="sd">  includes ``--download-f2blaslapack --download-hypre`` for best AMG</span>
+<span class="sd">  performance.</span>
+<span class="sd">- All PETSc objects are freed automatically via context managers, but</span>
+<span class="sd">  the user may call ``solver.destroy()`` explicitly when done.</span>
+
+<span class="sd">References</span>
+<span class="sd">----------</span>
+<span class="sd">.. [1] Balay et al., *PETSc Users Manual*, ANL-95/11 (Rev 3.20),</span>
+<span class="sd">   Argonne National Laboratory, 2024.</span>
+<span class="sd">.. [2] Doherty et al., *Waiwera*: A parallel geothermal flow simulator</span>
+<span class="sd">   using PETSc, Computers &amp; Geosciences, 2020.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">petsc4py</span><span class="w"> </span><span class="kn">import</span> <span class="n">PETSc</span>
+
+    <span class="n">HAS_PETSC</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">HAS_PETSC</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">PETSc</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[misc]</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">garuda.core.grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructuredGrid</span>
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Public guard</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="n">has_petsc</span> <span class="o">=</span> <span class="n">HAS_PETSC</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Error helpers</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_require_petsc</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Raise a helpful error when PETSc is not installed.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">HAS_PETSC</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot;PETSc support is not available.  Install with:</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;  Ubuntu/Debian:  sudo apt-get install libpetsc-real-dev</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;  Then:           pip install petsc4py</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;For AMG (GAMG/hypre) also add --download-hypre when</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">&quot;configuring PETSc at compile time.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Distributed mesh wrapper (DMDA)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PETScDMSolver">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PETScDMSolver</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Distributed mesh manager for structured grids using PETSc DMDA.</span>
+
+<span class="sd">    Creates a PETSc ``DMDA`` (Distributed-array manager) that partitions</span>
+<span class="sd">    a Cartesian grid across MPI ranks and handles ghost-cell exchange.</span>
+<span class="sd">    This is the foundation for scalable parallel TPFA solves.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grid : StructuredGrid</span>
+<span class="sd">        The structured Cartesian grid to distribute.</span>
+<span class="sd">    comm : PETSc.Comm, optional</span>
+<span class="sd">        MPI communicator (defaults to ``PETSc.COMM_WORLD``).</span>
+<span class="sd">    stencil_width : int</span>
+<span class="sd">        Ghost-cell width (``1`` for 5/7-point TPFA stencil).</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    da : PETSc.DMDA</span>
+<span class="sd">        The PETSc distributed-array object.</span>
+<span class="sd">    local_sizes : tuple[int, ...]</span>
+<span class="sd">        Local subdomain extents on this rank.</span>
+<span class="sd">    ranges : tuple[range, ...]</span>
+<span class="sd">        Global index ranges owned by this rank in each direction.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">grid</span><span class="p">:</span> <span class="n">StructuredGrid</span>
+    <span class="n">comm</span><span class="p">:</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Comm</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">stencil_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span>  <span class="c1"># type: ignore[unused-ignore]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">getRank</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">getSize</span><span class="p">()</span>
+
+        <span class="c1"># Create DMDA matching the grid dimensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">da</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">DMDA</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">sizes</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">ny</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nz</span><span class="p">),</span>
+            <span class="n">stencil_width</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span><span class="p">,</span>
+            <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+            <span class="n">boundary_type</span><span class="o">=</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">DMDA</span><span class="o">.</span><span class="n">BoundaryType</span><span class="o">.</span><span class="n">GHOSTED</span><span class="p">,)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span><span class="p">,</span>
+            <span class="n">stencil_type</span><span class="o">=</span><span class="n">PETSc</span><span class="o">.</span><span class="n">DMDA</span><span class="o">.</span><span class="n">StencilType</span><span class="o">.</span><span class="n">STAR</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Local ownership ranges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">getRanges</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_sizes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">r</span><span class="o">.</span><span class="n">start</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span><span class="p">)</span>
+
+        <span class="c1"># Pre-allocate ghosted vectors for efficient exchange</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec_local</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">createLocalVector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec_global</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">createGlobalVector</span><span class="p">()</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Utility: global &lt;-&gt; local index mapping</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PETScDMSolver.global_to_local">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver.global_to_local">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_to_local</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ix</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">iy</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">iz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Map a global (ix,iy,iz) to the local linear index on this rank.</span>
+
+<span class="sd">        Returns *None* if the point is not owned by this rank.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rx</span><span class="p">,</span> <span class="n">ry</span><span class="p">,</span> <span class="n">rz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">rx</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;=</span> <span class="n">ix</span> <span class="o">&lt;</span> <span class="n">rx</span><span class="o">.</span><span class="n">stop</span> <span class="ow">and</span> <span class="n">ry</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;=</span> <span class="n">iy</span> <span class="o">&lt;</span> <span class="n">ry</span><span class="o">.</span><span class="n">stop</span> <span class="ow">and</span> <span class="n">rz</span><span class="o">.</span><span class="n">start</span> <span class="o">&lt;=</span> <span class="n">iz</span> <span class="o">&lt;</span> <span class="n">rz</span><span class="o">.</span><span class="n">stop</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># type: ignore[return-value]</span>
+
+        <span class="c1"># Local DMDA ordering is x-natural with ghost padding</span>
+        <span class="n">lnx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span>
+        <span class="n">lny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+        <span class="n">lx</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">-</span> <span class="n">rx</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span>
+        <span class="n">ly</span> <span class="o">=</span> <span class="p">(</span><span class="n">iy</span> <span class="o">-</span> <span class="n">ry</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">lz</span> <span class="o">=</span> <span class="p">(</span><span class="n">iz</span> <span class="o">-</span> <span class="n">rz</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">lx</span> <span class="o">+</span> <span class="n">ly</span> <span class="o">*</span> <span class="n">lnx</span> <span class="o">+</span> <span class="n">lz</span> <span class="o">*</span> <span class="n">lnx</span> <span class="o">*</span> <span class="n">lny</span></div>
+
+
+<div class="viewcode-block" id="PETScDMSolver.local_to_global_ijk">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver.local_to_global_ijk">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">local_to_global_ijk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert local linear index (with ghost padding) to global (ix,iy,iz).&quot;&quot;&quot;</span>
+        <span class="n">rx</span><span class="p">,</span> <span class="n">ry</span><span class="p">,</span> <span class="n">rz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ranges</span>
+        <span class="n">lnx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span>
+        <span class="n">lny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+
+        <span class="n">lx</span> <span class="o">=</span> <span class="n">local_idx</span> <span class="o">%</span> <span class="n">lnx</span>
+        <span class="n">ly</span> <span class="o">=</span> <span class="p">(</span><span class="n">local_idx</span> <span class="o">//</span> <span class="n">lnx</span><span class="p">)</span> <span class="o">%</span> <span class="n">lny</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">lz</span> <span class="o">=</span> <span class="n">local_idx</span> <span class="o">//</span> <span class="p">(</span><span class="n">lnx</span> <span class="o">*</span> <span class="n">lny</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="c1"># Subtract ghost padding to get global</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">lx</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span> <span class="o">+</span> <span class="n">rx</span><span class="o">.</span><span class="n">start</span>
+        <span class="n">iy</span> <span class="o">=</span> <span class="p">(</span><span class="n">ly</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span> <span class="o">+</span> <span class="n">ry</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="n">iz</span> <span class="o">=</span> <span class="p">(</span><span class="n">lz</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">stencil_width</span> <span class="o">+</span> <span class="n">rz</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="k">else</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">ix</span><span class="p">,</span> <span class="n">iy</span><span class="p">,</span> <span class="n">iz</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Data exchange: scatter global array to local ghosted array</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PETScDMSolver.global_to_local_array">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver.global_to_local_array">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">global_to_local_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">global_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scatter a global NumPy array to the local ghosted representation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        global_arr : ndarray</span>
+<span class="sd">            Full grid array of shape ``(grid.num_cells,)``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        local_arr : ndarray</span>
+<span class="sd">            Local+ghost array ready for stencil computation.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+        <span class="c1"># Set global PETSc vector from numpy (dense ordering)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec_global</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">global_arr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec_global</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>
+
+        <span class="c1"># Scatter global -&gt; local with ghost update</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">globalToLocal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vec_global</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec_local</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec_local</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PETScDMSolver.local_to_global_array">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver.local_to_global_array">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">local_to_global_array</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">local_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gather a local ghosted array back to a global NumPy array.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        local_arr : ndarray</span>
+<span class="sd">            Local+ghost data.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        global_arr : ndarray</span>
+<span class="sd">            Full grid array reconstructed on all ranks.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec_local</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">local_arr</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_vec_local</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">localToGlobal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_vec_local</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec_global</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_vec_global</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PETScDMSolver.get_ownership_range">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver.get_ownership_range">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_ownership_range</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return ``(start, end)`` global cell indices owned by this rank.&quot;&quot;&quot;</span>
+        <span class="c1"># DMDA ownership is contiguous in natural ordering</span>
+        <span class="n">ownership_ranges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">getOwnershipRanges</span><span class="p">()</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">ownership_ranges</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span><span class="p">]</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">ownership_ranges</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span></div>
+
+
+<div class="viewcode-block" id="PETScDMSolver.get_local_slice">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver.get_local_slice">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_local_slice</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract the portion of *arr* owned by this rank.&quot;&quot;&quot;</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ownership_range</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">arr</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="PETScDMSolver.destroy">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScDMSolver.destroy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Free PETSc DMDA and vectors.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_vec_local&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vec_local</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_vec_global&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_vec_global</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;da&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">da</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Destructor safety — call destroy if not already released.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># PETSc TPFA solver</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PETScTPFASolver">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScTPFASolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PETScTPFASolver</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Two-Point Flux Approximation solver backed by PETSc KSP / DMDA.</span>
+
+<span class="sd">    Replaces SciPy ``spsolve`` / ``cg`` with PETSc&#39;s linear algebra</span>
+<span class="sd">    infrastructure, enabling:</span>
+
+<span class="sd">    - Distributed memory parallelism (MPI)</span>
+<span class="sd">    - Scalable iterative solvers (CG, GMRES, BiCGSTAB, etc.)</span>
+<span class="sd">    - Algebraic multigrid preconditioning (GAMG, hypre-BoomerAMG)</span>
+<span class="sd">    - Ghost-cell data exchange via DMDA</span>
+<span class="sd">    - Optional non-linear solves via SNES for multiphase flow</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grid : StructuredGrid</span>
+<span class="sd">        The structured Cartesian grid.</span>
+<span class="sd">    mu : float</span>
+<span class="sd">        Fluid viscosity [Pa·s].</span>
+<span class="sd">    rho : float</span>
+<span class="sd">        Fluid density [kg/m³].</span>
+<span class="sd">    g : float</span>
+<span class="sd">        Gravitational acceleration [m/s²].</span>
+<span class="sd">    comm : PETSc.Comm, optional</span>
+<span class="sd">        MPI communicator.  Defaults to ``PETSc.COMM_WORLD``.</span>
+<span class="sd">    solver_type : str</span>
+<span class="sd">        KSP solver type.  Common choices:</span>
+<span class="sd">        ``&quot;cg&quot;`` (default), ``&quot;gmres&quot;``, ``&quot;bcgs&quot;`` (BiCGSTAB).</span>
+<span class="sd">    pc_type : str</span>
+<span class="sd">        Preconditioner type.  Recommended:</span>
+<span class="sd">        ``&quot;gamg&quot;`` (PETSc algebraic multigrid — default),</span>
+<span class="sd">        ``&quot;hypre&quot;`` (BoomerAMG, requires hypre build),</span>
+<span class="sd">        ``&quot;ilu&quot;`` (ILU, serial-only fallback),</span>
+<span class="sd">        ``&quot;lu&quot;`` (direct).</span>
+<span class="sd">    petsc_options : dict[str, str | float | int], optional</span>
+<span class="sd">        Additional PETSc option / value pairs passed directly via</span>
+<span class="sd">        ``PETSc.Options().setValue``.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; grid = StructuredGrid(nx=50, ny=50, nz=5, dx=10, dy=10, dz=5)</span>
+<span class="sd">    &gt;&gt;&gt; grid.set_permeability(100, unit=&quot;md&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; solver = PETScTPFASolver(grid, solver_type=&quot;gmres&quot;, pc_type=&quot;gamg&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; p = solver.solve(np.zeros(grid.num_cells),</span>
+<span class="sd">    ...                  bc_type=&quot;dirichlet&quot;,</span>
+<span class="sd">    ...                  bc_values=np.array([200e5, 100e5]))</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PETScTPFASolver.__init__">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScTPFASolver.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">grid</span><span class="p">:</span> <span class="n">StructuredGrid</span><span class="p">,</span>
+        <span class="n">mu</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>
+        <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1000.0</span><span class="p">,</span>
+        <span class="n">g</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">9.81</span><span class="p">,</span>
+        <span class="n">comm</span><span class="p">:</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Comm</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">solver_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cg&quot;</span><span class="p">,</span>
+        <span class="n">pc_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gamg&quot;</span><span class="p">,</span>
+        <span class="n">petsc_options</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">StructuredGrid</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;PETScTPFASolver only supports StructuredGrid&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="n">g</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comm</span> <span class="o">=</span> <span class="n">comm</span> <span class="ow">or</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">COMM_WORLD</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="o">.</span><span class="n">getSize</span><span class="p">()</span>
+
+        <span class="c1"># -- DMDA for distributed mesh and ghost exchange ------------------</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dm</span> <span class="o">=</span> <span class="n">PETScDMSolver</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span> <span class="n">stencil_width</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># -- Precompute transmissibilities (local) -------------------------</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transmissibilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_transmissibilities</span><span class="p">()</span>
+
+        <span class="c1"># -- PETSc linear solver (KSP) ------------------------------------</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">KSP</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">KSP</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span> <span class="n">solver_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()))</span>
+
+        <span class="c1"># Preconditioner</span>
+        <span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">getPC</span><span class="p">()</span>
+        <span class="n">pc</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">PC</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span> <span class="n">pc_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()))</span>
+
+        <span class="c1"># Extra PETSc options</span>
+        <span class="k">if</span> <span class="n">petsc_options</span><span class="p">:</span>
+            <span class="n">opts</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Options</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">petsc_options</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">opts</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+        <span class="c1"># For GAMG on structured grids, set near-nullspace / coordinates</span>
+        <span class="k">if</span> <span class="n">pc_type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;gamg&quot;</span><span class="p">:</span>
+            <span class="n">pc</span><span class="o">.</span><span class="n">setGAMGLevels</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">pc</span><span class="o">.</span><span class="n">setGAMGThreshold</span><span class="p">(</span><span class="mf">0.05</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_petsc_options_applied</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">petsc_options</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Transmissibility computation (local to each rank)</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_transmissibilities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute face transmissibilities for the **local** subdomain.</span>
+
+<span class="sd">        Only interior faces between two local cells are stored; boundary</span>
+<span class="sd">        faces carry Dirichlet contributions applied directly to the RHS.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        T : ndarray</span>
+<span class="sd">            Local transmissibilities indexed by face (order: x, y, z).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">ny</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nz</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dz</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span> <span class="s2">&quot;mean&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dz</span><span class="p">)</span>
+
+        <span class="n">k</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;permeability&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">k_iso</span> <span class="o">=</span> <span class="mf">1e-14</span>  <span class="c1"># fallback</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Use diagonal component</span>
+            <span class="n">k_iso</span> <span class="o">=</span> <span class="n">k</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">k</span><span class="p">)))</span>
+
+        <span class="c1"># Total faces on global grid</span>
+        <span class="n">num_faces_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="n">nz</span>
+        <span class="n">num_faces_y</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nz</span>
+        <span class="n">num_faces_z</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="p">(</span><span class="n">nz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">num_faces_y</span> <span class="o">+</span> <span class="n">num_faces_z</span><span class="p">)</span>
+
+        <span class="c1"># X-faces</span>
+        <span class="n">face_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">A</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">dz</span>
+                    <span class="k">if</span> <span class="n">ix</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="k">elif</span> <span class="n">ix</span> <span class="o">==</span> <span class="n">nx</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cL</span> <span class="o">=</span> <span class="p">(</span><span class="n">ix</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">cR</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">cL</span><span class="p">]</span> <span class="o">+</span> <span class="n">dx</span> <span class="o">/</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">cR</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="n">face_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Y-faces</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                    <span class="n">A</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">dz</span>
+                    <span class="k">if</span> <span class="n">iy</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="k">elif</span> <span class="n">iy</span> <span class="o">==</span> <span class="n">ny</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="p">(</span><span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cL</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="p">(</span><span class="n">iy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">cR</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dy</span> <span class="o">/</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">cL</span><span class="p">]</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">/</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">cR</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="n">face_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Z-faces</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                    <span class="n">A</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">dy</span>
+                    <span class="k">if</span> <span class="n">iz</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dz</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="k">elif</span> <span class="n">iz</span> <span class="o">==</span> <span class="n">nz</span><span class="p">:</span>
+                        <span class="n">c</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="p">(</span><span class="n">nz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dz</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cL</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="p">(</span><span class="n">iz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">cR</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dz</span> <span class="o">/</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">cL</span><span class="p">]</span> <span class="o">+</span> <span class="n">dz</span> <span class="o">/</span> <span class="n">k_iso</span><span class="p">[</span><span class="n">cR</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                    <span class="n">face_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">T</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Matrix assembly</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_local_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bc_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">bc_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">PETSc</span><span class="o">.</span><span class="n">Mat</span><span class="p">,</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Vec</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assemble the local system ``A * p = b`` in PETSc format.</span>
+
+<span class="sd">        For Dirichlet BCs, boundary-face transmissibilities are added</span>
+<span class="sd">        onto the diagonal and the boundary pressure is moved to the RHS.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+        <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">get_ownership_range</span><span class="p">()</span>
+
+        <span class="c1"># Create sparse matrix in AIJ format</span>
+        <span class="n">A_mat</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Mat</span><span class="p">()</span><span class="o">.</span><span class="n">createAIJ</span><span class="p">(</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span><span class="p">),</span>
+            <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">A_mat</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="n">A_mat</span><span class="o">.</span><span class="n">setOption</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">Mat</span><span class="o">.</span><span class="n">Option</span><span class="o">.</span><span class="n">NEW_NONZERO_ALLOCATION_ERR</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="n">b_vec</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Vec</span><span class="p">()</span><span class="o">.</span><span class="n">createWithArray</span><span class="p">(</span><span class="n">source_terms</span><span class="p">,</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">b_vec</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>
+
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">ny</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nz</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transmissibilities</span>
+        <span class="n">num_faces_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="n">nz</span>
+        <span class="n">num_faces_y</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nz</span>
+
+        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+            <span class="c1"># Recover (ix, iy, iz)</span>
+            <span class="n">iz</span> <span class="o">=</span> <span class="n">c</span> <span class="o">//</span> <span class="p">(</span><span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span><span class="p">)</span>
+            <span class="n">rem</span> <span class="o">=</span> <span class="n">c</span> <span class="o">%</span> <span class="p">(</span><span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span><span class="p">)</span>
+            <span class="n">iy</span> <span class="o">=</span> <span class="n">rem</span> <span class="o">//</span> <span class="n">nx</span>
+            <span class="n">ix</span> <span class="o">=</span> <span class="n">rem</span> <span class="o">%</span> <span class="n">nx</span>
+
+            <span class="n">diag</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="c1"># West face (ix-1)</span>
+            <span class="k">if</span> <span class="n">ix</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">iz</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="n">A_mat</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Boundary face</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">iz</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># East face (ix+1)</span>
+            <span class="k">if</span> <span class="n">ix</span> <span class="o">&lt;</span> <span class="n">nx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">iz</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="n">A_mat</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">iz</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="c1"># South face (iy-1)</span>
+            <span class="k">if</span> <span class="n">iy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="n">A_mat</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span> <span class="o">-</span> <span class="n">nx</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">bc_values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="c1"># North face (iy+1)</span>
+            <span class="k">if</span> <span class="n">iy</span> <span class="o">&lt;</span> <span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="n">A_mat</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">nx</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">f</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">bc_values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+            <span class="c1"># Z-face indexing: bottom face of cell (ix,iy,iz) sits at</span>
+            <span class="c1"># z_edges[iz], top face at z_edges[iz+1]. Grid._generate_faces</span>
+            <span class="c1"># lays them out as (k, j, i) with i-fastest, so:</span>
+            <span class="c1">#   bottom = num_faces_x + num_faces_y + iz       * nx*ny + iy*nx + ix</span>
+            <span class="c1">#   top    = num_faces_x + num_faces_y + (iz + 1) * nx*ny + iy*nx + ix</span>
+            <span class="n">z_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+
+            <span class="c1"># Bottom face (z_edges[iz]) — neighbour at iz - 1</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">num_faces_y</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">ix</span>
+            <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">iz</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">A_mat</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span> <span class="o">-</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="n">z_neighbour</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">c</span> <span class="o">-</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+                <span class="c1"># Per-face gravity contribution: T_f * rho * g * (z_c - z_R)</span>
+                <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">*</span> <span class="p">(</span><span class="n">z_c</span> <span class="o">-</span> <span class="n">z_neighbour</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">bc_values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+
+            <span class="c1"># Top face (z_edges[iz+1]) — neighbour at iz + 1</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">num_faces_y</span> <span class="o">+</span> <span class="p">(</span><span class="n">iz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">ix</span>
+            <span class="n">diag</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">iz</span> <span class="o">&lt;</span> <span class="n">nz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">A_mat</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span> <span class="o">+</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+                <span class="n">z_neighbour</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">c</span> <span class="o">+</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+                <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">*</span> <span class="p">(</span><span class="n">z_c</span> <span class="o">-</span> <span class="n">z_neighbour</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">bc_values</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">5</span><span class="p">:</span>
+                    <span class="n">b_vec</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+            <span class="n">A_mat</span><span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span> <span class="o">=</span> <span class="n">diag</span>
+
+        <span class="n">A_mat</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>
+        <span class="n">b_vec</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">A_mat</span><span class="p">,</span> <span class="n">b_vec</span>
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Solver interface</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PETScTPFASolver.solve">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScTPFASolver.solve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bc_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span>
+        <span class="n">bc_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">solver_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">pc_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10000</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve ``A * p = b`` using PETSc KSP.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source_terms : ndarray</span>
+<span class="sd">            Source/sink terms [kg/s] (positive = injection).</span>
+<span class="sd">        bc_type : str</span>
+<span class="sd">            ``&quot;dirichlet&quot;`` or ``&quot;neumann&quot;``.</span>
+<span class="sd">        bc_values : ndarray, optional</span>
+<span class="sd">            Boundary values.  For Dirichlet: ``[p_left, p_right, ...]``.</span>
+<span class="sd">        solver_type : str, optional</span>
+<span class="sd">            Override KSP type (e.g. ``&quot;gmres&quot;``).</span>
+<span class="sd">        pc_type : str, optional</span>
+<span class="sd">            Override preconditioner (e.g. ``&quot;gamg&quot;``).</span>
+<span class="sd">        tol : float</span>
+<span class="sd">            Relative convergence tolerance.</span>
+<span class="sd">        max_iter : int</span>
+<span class="sd">            Maximum Krylov iterations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pressure : ndarray</span>
+<span class="sd">            Global cell pressure [Pa] on **all** ranks.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+
+        <span class="c1"># Optionally override solver / PC</span>
+        <span class="k">if</span> <span class="n">solver_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">KSP</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span> <span class="n">solver_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()))</span>
+        <span class="k">if</span> <span class="n">pc_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">getPC</span><span class="p">()</span>
+            <span class="n">pc</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">PC</span><span class="o">.</span><span class="n">Type</span><span class="p">,</span> <span class="n">pc_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span><span class="n">rtol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">max_it</span><span class="o">=</span><span class="n">max_iter</span><span class="p">)</span>
+
+        <span class="c1"># Build system</span>
+        <span class="n">A_mat</span><span class="p">,</span> <span class="n">b_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_local_matrix</span><span class="p">(</span><span class="n">source_terms</span><span class="p">,</span> <span class="n">bc_type</span><span class="p">,</span> <span class="n">bc_values</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">setOperators</span><span class="p">(</span><span class="n">A_mat</span><span class="p">)</span>
+
+        <span class="c1"># Initial guess (zero or previous solution)</span>
+        <span class="n">x_vec</span> <span class="o">=</span> <span class="n">A_mat</span><span class="o">.</span><span class="n">createVecRight</span><span class="p">()</span>
+
+        <span class="c1"># Solve</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">b_vec</span><span class="p">,</span> <span class="n">x_vec</span><span class="p">)</span>
+        <span class="n">its</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">getIterationNumber</span><span class="p">()</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">getConvergedReason</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">reason</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PETSc KSP did not converge (reason=</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">, iterations=</span><span class="si">{</span><span class="n">its</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+        <span class="n">pressure</span> <span class="o">=</span> <span class="n">x_vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Cleanup PETSc objects</span>
+        <span class="n">A_mat</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">b_vec</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">x_vec</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">pressure</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Non-linear solver (SNES) — placeholder for future multiphase coupling</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PETScTPFASolver.solve_nonlinear">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScTPFASolver.solve_nonlinear">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve_nonlinear</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">residual_func</span><span class="p">,</span>  <span class="c1"># Callable[[np.ndarray], np.ndarray]</span>
+        <span class="n">jacobian_func</span><span class="p">,</span>  <span class="c1"># Callable[[np.ndarray], np.ndarray]</span>
+        <span class="n">x0</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-8</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve a non-linear system ``F(x) = 0`` using PETSc SNES.</span>
+
+<span class="sd">        .. warning::</span>
+<span class="sd">           This is a low-level interface.  For production multiphase</span>
+<span class="sd">           simulations a higher-level wrapper is recommended.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        residual_func : callable</span>
+<span class="sd">            ``F(x) -&gt; ndarray``</span>
+<span class="sd">        jacobian_func : callable</span>
+<span class="sd">            ``J(x) -&gt; PETSc.Mat``</span>
+<span class="sd">        x0 : ndarray</span>
+<span class="sd">            Initial guess.</span>
+<span class="sd">        tol : float</span>
+<span class="sd">            Non-linear tolerance.</span>
+<span class="sd">        max_iter : int</span>
+<span class="sd">            Maximum Newton iterations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        x : ndarray</span>
+<span class="sd">            Solution vector.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+
+        <span class="c1"># The current callback signature uses ``J_mat.setArray(J_arr)`` which</span>
+        <span class="c1"># is only valid for PETSc Vec objects; the matrix is created as AIJ</span>
+        <span class="c1"># (sparse) below, so the assignment fails at runtime. Until a proper</span>
+        <span class="c1"># sparse-fill path (with explicit row/col MatSetValues + assembly) is</span>
+        <span class="c1"># implemented this method is non-functional, and it is honest to fail</span>
+        <span class="c1"># eagerly rather than allow callers to discover that mid-run.</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;PETScDMSolver.solve_nonlinear is not yet wired up: the Jacobian &quot;</span>
+            <span class="s2">&quot;callback uses Mat.setArray() which is invalid for AIJ matrices. &quot;</span>
+            <span class="s2">&quot;Use solve() for the linear case, or open an issue if you need &quot;</span>
+            <span class="s2">&quot;the SNES path.&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">snes</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">SNES</span><span class="p">()</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">snes</span><span class="o">.</span><span class="n">setType</span><span class="p">(</span><span class="n">PETSc</span><span class="o">.</span><span class="n">SNES</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">NEWTONLS</span><span class="p">)</span>
+        <span class="n">snes</span><span class="o">.</span><span class="n">setTolerances</span><span class="p">(</span><span class="n">rtol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">max_it</span><span class="o">=</span><span class="n">max_iter</span><span class="p">)</span>
+
+        <span class="c1"># Create PETSc vectors</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Vec</span><span class="p">()</span><span class="o">.</span><span class="n">createWithArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x0</span><span class="p">),</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Vec</span><span class="p">()</span><span class="o">.</span><span class="n">createWithArray</span><span class="p">(</span><span class="n">x0</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span><span class="p">)</span>  <span class="c1"># type: ignore[union-attr]</span>
+
+        <span class="c1"># Form function</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_form_function</span><span class="p">(</span><span class="n">snes_instance</span><span class="p">,</span> <span class="n">x_vec</span><span class="p">,</span> <span class="n">r_vec</span><span class="p">):</span>  <span class="c1"># noqa: ARG001</span>
+            <span class="n">x_arr</span> <span class="o">=</span> <span class="n">x_vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="n">r_arr</span> <span class="o">=</span> <span class="n">residual_func</span><span class="p">(</span><span class="n">x_arr</span><span class="p">)</span>
+            <span class="n">r_vec</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">r_arr</span><span class="p">)</span>
+
+        <span class="c1"># Form Jacobian</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_form_jacobian</span><span class="p">(</span><span class="n">snes_instance</span><span class="p">,</span> <span class="n">x_vec</span><span class="p">,</span> <span class="n">J_mat</span><span class="p">,</span> <span class="n">P_mat</span><span class="p">):</span>  <span class="c1"># noqa: ARG001</span>
+            <span class="n">x_arr</span> <span class="o">=</span> <span class="n">x_vec</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span>
+            <span class="n">J_arr</span> <span class="o">=</span> <span class="n">jacobian_func</span><span class="p">(</span><span class="n">x_arr</span><span class="p">)</span>
+            <span class="n">J_mat</span><span class="o">.</span><span class="n">setArray</span><span class="p">(</span><span class="n">J_arr</span><span class="p">)</span>
+            <span class="n">J_mat</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>
+            <span class="n">P_mat</span><span class="o">.</span><span class="n">assemble</span><span class="p">()</span>
+
+        <span class="n">snes</span><span class="o">.</span><span class="n">setFunction</span><span class="p">(</span><span class="n">_form_function</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+        <span class="c1"># Dummy matrix for Jacobian callback</span>
+        <span class="n">J_dummy</span> <span class="o">=</span> <span class="n">PETSc</span><span class="o">.</span><span class="n">Mat</span><span class="p">()</span><span class="o">.</span><span class="n">createAIJ</span><span class="p">(</span>  <span class="c1"># type: ignore[union-attr]</span>
+            <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x0</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">x0</span><span class="p">)),</span> <span class="n">comm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">comm</span>
+        <span class="p">)</span>
+        <span class="n">J_dummy</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="n">snes</span><span class="o">.</span><span class="n">setJacobian</span><span class="p">(</span><span class="n">_form_jacobian</span><span class="p">,</span> <span class="n">J_dummy</span><span class="p">,</span> <span class="n">J_dummy</span><span class="p">)</span>
+
+        <span class="n">snes</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+        <span class="n">sol</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">getArray</span><span class="p">()</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="n">snes</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">r</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="n">J_dummy</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">sol</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Diagnostics</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PETScTPFASolver.get_solver_info">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScTPFASolver.get_solver_info">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_solver_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return dictionary of KSP configuration and last-solve stats.&quot;&quot;&quot;</span>
+        <span class="n">_require_petsc</span><span class="p">()</span>
+        <span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">getPC</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;ksp_type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">getType</span><span class="p">()),</span>
+            <span class="s2">&quot;pc_type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">pc</span><span class="o">.</span><span class="n">getType</span><span class="p">()),</span>
+            <span class="s2">&quot;mpi_size&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span>
+            <span class="s2">&quot;local_cells&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">local_sizes</span><span class="p">,</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="PETScTPFASolver.destroy">
+<a class="viewcode-back" href="../../../garuda.html#garuda.PETScTPFASolver.destroy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">destroy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Free all PETSc objects (KSP, DM, vectors).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;ksp&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ksp</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;dm&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dm</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

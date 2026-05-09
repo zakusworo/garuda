@@ -1,0 +1,770 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.core.tpfa_solver &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.core.tpfa_solver</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.core.tpfa_solver</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;TPFA Solver - Two-Point Flux Approximation for porous media flow.</span>
+
+<span class="sd">Implements finite volume discretization with TPFA for structured and</span>
+<span class="sd">unstructured grids. Supports single-phase and multiphase flow.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">jit</span><span class="p">,</span> <span class="n">prange</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="kn">import</span> <span class="n">csr_matrix</span><span class="p">,</span> <span class="n">lil_matrix</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.sparse.linalg</span><span class="w"> </span><span class="kn">import</span> <span class="n">cg</span><span class="p">,</span> <span class="n">spsolve</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">garuda.core.grid</span><span class="w"> </span><span class="kn">import</span> <span class="n">Grid</span>
+
+
+<div class="viewcode-block" id="TPFAFlux">
+<a class="viewcode-back" href="../../../tpfa_solver.html#garuda.TPFAFlux">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TPFAFlux</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Container for TPFA flux computation results.&quot;&quot;&quot;</span>
+
+    <span class="c1"># Transmissibilities (faces,)</span>
+    <span class="n">transmissibilities</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+
+    <span class="c1"># Pressure gradient (faces,)</span>
+    <span class="n">pressure_gradient</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+
+    <span class="c1"># Flux across each face (faces,)</span>
+    <span class="n">flux</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+
+    <span class="c1"># Upstream cell for each face (for multiphase)</span>
+    <span class="n">upstream_cell</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></div>
+
+
+
+<div class="viewcode-block" id="TPFASolver">
+<a class="viewcode-back" href="../../../tpfa_solver.html#garuda.TPFASolver">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TPFASolver</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Two-Point Flux Approximation solver for porous media flow.</span>
+
+<span class="sd">    The TPFA method computes fluxes across cell faces using:</span>
+
+<span class="sd">        q = -T * (p_right - p_left + rho * g * (z_right - z_left))</span>
+
+<span class="sd">    where T is the transmissibility combining geometry and permeability.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grid : Grid</span>
+<span class="sd">        Computational grid</span>
+<span class="sd">    mu : float or array-like</span>
+<span class="sd">        Fluid viscosity [Pa·s]</span>
+<span class="sd">    rho : float or array-like</span>
+<span class="sd">        Fluid density [kg/m³]</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from garuda import StructuredGrid, TPFASolver</span>
+<span class="sd">    &gt;&gt;&gt; grid = StructuredGrid(nx=10, ny=10, nz=1, dx=100, dy=100, dz=10)</span>
+<span class="sd">    &gt;&gt;&gt; solver = TPFASolver(grid, mu=1e-3, rho=1000)</span>
+<span class="sd">    &gt;&gt;&gt; pressure = solver.solve(source_terms, bc)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TPFASolver.__init__">
+<a class="viewcode-back" href="../../../tpfa_solver.html#garuda.TPFASolver.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">grid</span><span class="p">:</span> <span class="n">Grid</span><span class="p">,</span>
+        <span class="n">mu</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-3</span><span class="p">,</span>  <span class="c1"># Water viscosity at 20°C [Pa·s]</span>
+        <span class="n">rho</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>  <span class="c1"># Water density [kg/m³]</span>
+        <span class="n">g</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">9.81</span><span class="p">,</span>  <span class="c1"># Gravity [m/s²]</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">=</span> <span class="n">rho</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="n">g</span>
+
+        <span class="c1"># Precompute transmissibilities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transmissibilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_transmissibilities</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_transmissibilities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute face transmissibilities.</span>
+
+<span class="sd">        For a face between cells L and R:</span>
+
+<span class="sd">            T = 2 * A / (dL/kL + dR/kR) / mu</span>
+
+<span class="sd">        where:</span>
+<span class="sd">            A = face area</span>
+<span class="sd">            dL, dR = distances from cell centroids to face</span>
+<span class="sd">            kL, kR = permeabilities</span>
+<span class="sd">            mu = viscosity</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transmissibilities : ndarray</span>
+<span class="sd">            Face transmissibilities [m³·s/kg]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_faces</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces</span><span class="p">)</span>
+
+        <span class="c1"># Get permeability (assume isotropic for now)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;permeability&quot;</span><span class="p">):</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">permeability</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">perm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span><span class="p">)])</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;permiability&quot;</span><span class="p">):</span>
+            <span class="n">perm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">permiability</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">perm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span><span class="p">)</span>
+
+        <span class="c1"># If the grid is uniformly spaced and 3D, use the numba-accelerated</span>
+        <span class="c1"># path for speed. Otherwise fall back to a generic face-based loop</span>
+        <span class="c1"># that handles heterogeneous spacing correctly via face_areas and</span>
+        <span class="c1"># cell-to-face distances.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_uniform_spacing</span><span class="p">():</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_3d_transmissibilities</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_transmissibilities_generic</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_uniform_spacing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;True if all dx/dy/dz spacings are constant.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">spacing</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;dx&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;dy&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                        <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;dz&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">spacing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">spacing</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">arr</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_transmissibilities_generic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generic face-based transmissibility for any dim and any spacing.</span>
+
+<span class="sd">        For each face f with cells (cL, cR):</span>
+<span class="sd">            T_f = A_f / (d_L / k_L + d_R / k_R) / mu      (interior)</span>
+<span class="sd">            T_f = k_b * A_f / d_b / mu                    (boundary)</span>
+<span class="sd">        where d_L, d_R, d_b are the cell-centroid → face-centroid distances</span>
+<span class="sd">        — these collapse to dx/2 on a uniform grid and stay correct on</span>
+<span class="sd">        heterogeneous grids without averaging.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_faces</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_faces</span><span class="p">):</span>
+            <span class="n">cL</span><span class="p">,</span> <span class="n">cR</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_cells</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_cells</span><span class="p">[</span><span class="n">f</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_areas</span><span class="p">[</span><span class="n">f</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_areas</span><span class="o">.</span><span class="n">size</span> <span class="k">else</span> <span class="mf">1.0</span>
+            <span class="n">fc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_centroids</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">cL</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cR</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dL</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">fc</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cL</span><span class="p">]))</span>
+                <span class="n">dR</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">fc</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cR</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">dL</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">dR</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dL</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cL</span><span class="p">]</span> <span class="o">+</span> <span class="n">dR</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cR</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+            <span class="k">elif</span> <span class="n">cL</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dL</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">fc</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cL</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">dL</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cL</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="n">dL</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+            <span class="k">elif</span> <span class="n">cR</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dR</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">fc</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cR</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">dR</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cR</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="n">dR</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+        <span class="k">return</span> <span class="n">T</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_1d_transmissibilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute 1D transmissibilities.&quot;&quot;&quot;</span>
+        <span class="n">nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nx</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dz</span><span class="p">))</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;dy&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="mf">1.0</span>
+
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Interior faces</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nx</span><span class="p">):</span>
+            <span class="n">dL</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">dR</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">kL</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">kR</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dL</span> <span class="o">/</span> <span class="n">kL</span> <span class="o">+</span> <span class="n">dR</span> <span class="o">/</span> <span class="n">kR</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+
+        <span class="c1"># Boundary faces (half-cell)</span>
+        <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+        <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+
+        <span class="k">return</span> <span class="n">T</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_2d_transmissibilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute 2D transmissibilities.&quot;&quot;&quot;</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">ny</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span>
+
+        <span class="n">num_faces_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span>
+        <span class="n">num_faces_y</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">num_faces_y</span><span class="p">)</span>
+
+        <span class="c1"># X-faces (normal in x-direction)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">face_idx</span> <span class="o">=</span> <span class="n">j</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span>
+                <span class="n">A</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">*</span> <span class="mf">1.0</span>  <span class="c1"># Assuming dz=1 for 2D</span>
+
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Left boundary</span>
+                    <span class="n">dL</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">kL</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">kL</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="n">dL</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                <span class="k">elif</span> <span class="n">i</span> <span class="o">==</span> <span class="n">nx</span><span class="p">:</span>  <span class="c1"># Right boundary</span>
+                    <span class="n">dR</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">kR</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="n">nx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">)]</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">kR</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="n">dR</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># Interior</span>
+                    <span class="n">cell_L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+                    <span class="n">cell_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+                    <span class="n">dL</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">dR</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">kL</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span>
+                    <span class="n">kR</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_R</span><span class="p">]</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dL</span> <span class="o">/</span> <span class="n">kL</span> <span class="o">+</span> <span class="n">dR</span> <span class="o">/</span> <span class="n">kR</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+
+        <span class="c1"># Y-faces (normal in y-direction)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                <span class="n">face_idx</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">j</span>
+                <span class="n">A</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">*</span> <span class="mf">1.0</span>
+
+                <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Bottom boundary</span>
+                    <span class="n">dL</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">kL</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">kL</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="n">dL</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                <span class="k">elif</span> <span class="n">j</span> <span class="o">==</span> <span class="n">ny</span><span class="p">:</span>  <span class="c1"># Top boundary</span>
+                    <span class="n">dR</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">kR</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">kR</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="n">dR</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># Interior</span>
+                    <span class="n">cell_L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                    <span class="n">cell_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">get_cell_index</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span>
+                    <span class="n">dL</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">dR</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span>
+                    <span class="n">kL</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span>
+                    <span class="n">kR</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_R</span><span class="p">]</span>
+                    <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dL</span> <span class="o">/</span> <span class="n">kL</span> <span class="o">+</span> <span class="n">dR</span> <span class="o">/</span> <span class="n">kR</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+
+        <span class="k">return</span> <span class="n">T</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_3d_transmissibilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute 3D transmissibilities.&quot;&quot;&quot;</span>
+        <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">ny</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nz</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dz</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dz</span><span class="p">)</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">dz</span><span class="p">)</span>
+
+        <span class="n">num_faces_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="n">nz</span>
+        <span class="n">num_faces_y</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nz</span>
+        <span class="n">num_faces_z</span> <span class="o">=</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">*</span> <span class="p">(</span><span class="n">nz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">num_faces_y</span> <span class="o">+</span> <span class="n">num_faces_z</span><span class="p">)</span>
+
+        <span class="c1"># Use vectorized computation for speed</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_3d_transmissibilities_numba</span><span class="p">(</span>
+            <span class="n">k</span><span class="p">,</span> <span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dz</span><span class="p">,</span> <span class="n">num_faces_x</span><span class="p">,</span> <span class="n">num_faces_y</span><span class="p">,</span> <span class="n">num_faces_z</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">T</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="nd">@jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parallel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_3d_transmissibilities_numba</span><span class="p">(</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">nx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">ny</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">nz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dy</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">dz</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">num_faces_x</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_faces_y</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">num_faces_z</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">mu</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Numba-accelerated 3D transmissibility computation.&quot;&quot;&quot;</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">num_faces_y</span> <span class="o">+</span> <span class="n">num_faces_z</span><span class="p">)</span>
+
+        <span class="c1"># X-faces</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">face_idx</span> <span class="o">=</span> <span class="n">iz</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="p">(</span><span class="n">nx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">ix</span>
+                    <span class="n">A</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">dz</span>
+
+                    <span class="k">if</span> <span class="n">ix</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">cell_idx</span> <span class="o">=</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu</span>
+                    <span class="k">elif</span> <span class="n">ix</span> <span class="o">==</span> <span class="n">nx</span><span class="p">:</span>
+                        <span class="n">cell_idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">nx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cell_L</span> <span class="o">=</span> <span class="p">(</span><span class="n">ix</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">cell_R</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">dL</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+                        <span class="n">dR</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">/</span> <span class="mi">2</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dL</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span> <span class="o">+</span> <span class="n">dR</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_R</span><span class="p">])</span> <span class="o">/</span> <span class="n">mu</span>
+
+        <span class="c1"># Y-faces — Grid._generate_faces lays these out i-fastest, then iy,</span>
+        <span class="c1"># then iz, so the global index is num_faces_x + iz*nx*(ny+1) + iy*nx + ix.</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">nz</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                    <span class="n">face_idx</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="p">(</span><span class="n">ny</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">ix</span>
+                    <span class="n">A</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">dz</span>
+
+                    <span class="k">if</span> <span class="n">iy</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">cell_idx</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu</span>
+                    <span class="k">elif</span> <span class="n">iy</span> <span class="o">==</span> <span class="n">ny</span><span class="p">:</span>
+                        <span class="n">cell_idx</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="p">(</span><span class="n">ny</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cell_L</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="p">(</span><span class="n">iy</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">cell_R</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">dL</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span>
+                        <span class="n">dR</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">/</span> <span class="mi">2</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dL</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span> <span class="o">+</span> <span class="n">dR</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_R</span><span class="p">])</span> <span class="o">/</span> <span class="n">mu</span>
+
+        <span class="c1"># Z-faces</span>
+        <span class="k">for</span> <span class="n">iz</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nz</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">iy</span> <span class="ow">in</span> <span class="n">prange</span><span class="p">(</span><span class="n">ny</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+                    <span class="n">face_idx</span> <span class="o">=</span> <span class="n">num_faces_x</span> <span class="o">+</span> <span class="n">num_faces_y</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">ix</span>
+                    <span class="n">A</span> <span class="o">=</span> <span class="n">dx</span> <span class="o">*</span> <span class="n">dy</span>
+
+                    <span class="k">if</span> <span class="n">iz</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">cell_idx</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dz</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu</span>
+                    <span class="k">elif</span> <span class="n">iz</span> <span class="o">==</span> <span class="n">nz</span><span class="p">:</span>
+                        <span class="n">cell_idx</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="p">(</span><span class="n">nz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dz</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">mu</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cell_L</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="p">(</span><span class="n">iz</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">cell_R</span> <span class="o">=</span> <span class="n">ix</span> <span class="o">+</span> <span class="n">iy</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">+</span> <span class="n">iz</span> <span class="o">*</span> <span class="n">nx</span> <span class="o">*</span> <span class="n">ny</span>
+                        <span class="n">dL</span> <span class="o">=</span> <span class="n">dz</span> <span class="o">/</span> <span class="mi">2</span>
+                        <span class="n">dR</span> <span class="o">=</span> <span class="n">dz</span> <span class="o">/</span> <span class="mi">2</span>
+                        <span class="n">T</span><span class="p">[</span><span class="n">face_idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">A</span> <span class="o">/</span> <span class="p">(</span><span class="n">dL</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span> <span class="o">+</span> <span class="n">dR</span> <span class="o">/</span> <span class="n">k</span><span class="p">[</span><span class="n">cell_R</span><span class="p">])</span> <span class="o">/</span> <span class="n">mu</span>
+
+        <span class="k">return</span> <span class="n">T</span>
+
+<div class="viewcode-block" id="TPFASolver.compute_flux">
+<a class="viewcode-back" href="../../../tpfa_solver.html#garuda.TPFASolver.compute_flux">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_flux</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pressure</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">permeability</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TPFAFlux</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute fluxes given pressure field.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pressure : ndarray</span>
+<span class="sd">            Cell pressures [Pa]</span>
+<span class="sd">        permeability : ndarray, optional</span>
+<span class="sd">            Cell permeabilities (overrides grid permeability)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        flux_data : TPFAFlux</span>
+<span class="sd">            Container with transmissibilities, gradients, and fluxes</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_faces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_faces</span>
+        <span class="n">num_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span>
+
+        <span class="c1"># Pressure at faces (from connected cells)</span>
+        <span class="n">p_face</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces</span><span class="p">)</span>
+
+        <span class="c1"># Elevation *difference* z_R - z_L for the gravity term (NOT the</span>
+        <span class="c1"># absolute z of the face). Boundary faces leave dz as 0 so they</span>
+        <span class="c1"># contribute no spurious gravity-driven flux.</span>
+        <span class="n">dz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces</span><span class="p">)</span>
+        <span class="n">dp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_faces</span><span class="p">):</span>
+            <span class="n">cell_L</span><span class="p">,</span> <span class="n">cell_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_cells</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">cell_L</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cell_R</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">p_face</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">pressure</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span> <span class="o">+</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_R</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">dp</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_R</span><span class="p">]</span> <span class="o">-</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span>
+                <span class="n">dz</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cell_R</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cell_L</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">cell_L</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">p_face</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span>
+                <span class="c1"># Boundary face: dp/dz left at 0; use build_matrix BC handling</span>
+                <span class="c1"># for the actual driven flux.</span>
+            <span class="k">elif</span> <span class="n">cell_R</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">p_face</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_R</span><span class="p">]</span>
+
+        <span class="c1"># Flux convention matches build_matrix:</span>
+        <span class="c1">#   q_LR = T * (p_L - p_R + rho*g*(z_L - z_R)) = -T * (dp + rho*g*dz)</span>
+        <span class="n">gravity_term</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">*</span> <span class="n">dz</span>
+        <span class="n">flux</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">transmissibilities</span> <span class="o">*</span> <span class="p">(</span><span class="n">dp</span> <span class="o">+</span> <span class="n">gravity_term</span><span class="p">)</span>
+
+        <span class="c1"># Upstream direction (for multiphase): cell with higher pressure</span>
+        <span class="n">upstream</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_faces</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_faces</span><span class="p">):</span>
+            <span class="n">cell_L</span><span class="p">,</span> <span class="n">cell_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_cells</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">cell_L</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cell_R</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">upstream</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">cell_L</span> <span class="k">if</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_R</span><span class="p">]</span> <span class="k">else</span> <span class="n">cell_R</span>
+            <span class="k">elif</span> <span class="n">cell_L</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">upstream</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">cell_L</span>
+            <span class="k">elif</span> <span class="n">cell_R</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">upstream</span><span class="p">[</span><span class="n">f</span><span class="p">]</span> <span class="o">=</span> <span class="n">cell_R</span>
+
+        <span class="k">return</span> <span class="n">TPFAFlux</span><span class="p">(</span>
+            <span class="n">transmissibilities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transmissibilities</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+            <span class="n">pressure_gradient</span><span class="o">=</span><span class="n">dp</span><span class="p">,</span>
+            <span class="n">flux</span><span class="o">=</span><span class="n">flux</span><span class="p">,</span>
+            <span class="n">upstream_cell</span><span class="o">=</span><span class="n">upstream</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="TPFASolver.build_matrix">
+<a class="viewcode-back" href="../../../tpfa_solver.html#garuda.TPFASolver.build_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bc_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span>
+        <span class="n">bc_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">csr_matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the linear system A * p = b.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source_terms : ndarray</span>
+<span class="sd">            Source/sink terms [kg/s] (positive = injection)</span>
+<span class="sd">        bc_type : str</span>
+<span class="sd">            Boundary condition type: &#39;dirichlet&#39; (specified pressure) or</span>
+<span class="sd">            &#39;neumann&#39; (specified mass flux into cell).</span>
+<span class="sd">        bc_values : ndarray, optional</span>
+<span class="sd">            Boundary condition values. Two layouts are accepted:</span>
+<span class="sd">            - length 2: ``[low, high]`` — applied to all &quot;−&quot; / &quot;+&quot; boundaries</span>
+<span class="sd">              (legacy behaviour, kept for backward compatibility);</span>
+<span class="sd">            - length 6: ``[-x, +x, -y, +y, -z, +z]`` — independent value per</span>
+<span class="sd">              axis side, picked from the face&#39;s outward normal.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        A : csr_matrix</span>
+<span class="sd">            System matrix</span>
+<span class="sd">        b : ndarray</span>
+<span class="sd">            Right-hand side vector</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">num_cells</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span>
+
+        <span class="k">if</span> <span class="n">bc_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span> <span class="s2">&quot;neumann&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported bc_type </span><span class="si">{</span><span class="n">bc_type</span><span class="si">!r}</span><span class="s2">; expected &#39;dirichlet&#39; or &#39;neumann&#39;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Build sparse matrix</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">lil_matrix</span><span class="p">((</span><span class="n">num_cells</span><span class="p">,</span> <span class="n">num_cells</span><span class="p">))</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">source_terms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Assemble TPFA discretization using face connectivity</span>
+        <span class="c1"># For each cell: sum of fluxes = source</span>
+        <span class="c1"># Flux across face f: q_f = -T_f * (p_neighbor - p_cell + rho*g*dz)</span>
+
+        <span class="c1"># Process each face and accumulate contributions to cells</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">num_faces</span><span class="p">):</span>
+            <span class="n">cell_L</span><span class="p">,</span> <span class="n">cell_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_cells</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+            <span class="n">T_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transmissibilities</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+
+            <span class="c1"># Get face normal direction to determine which coordinate for gravity</span>
+            <span class="n">normal</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">face_normals</span><span class="p">[</span><span class="n">f</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">cell_L</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">cell_R</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c1"># Interior face: connects two cells</span>
+                <span class="c1"># Flux from L to R: q = T * (p_L - p_R + rho*g*(z_L - z_R))</span>
+                <span class="n">z_L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cell_L</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+                <span class="n">z_R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">cell_centroids</span><span class="p">[</span><span class="n">cell_R</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+                <span class="n">dz</span> <span class="o">=</span> <span class="n">z_L</span> <span class="o">-</span> <span class="n">z_R</span>
+
+                <span class="c1"># Contribution to cell_L (outflow is negative)</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">cell_L</span><span class="p">,</span> <span class="n">cell_L</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T_f</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">cell_L</span><span class="p">,</span> <span class="n">cell_R</span><span class="p">]</span> <span class="o">-=</span> <span class="n">T_f</span>
+                <span class="n">b</span><span class="p">[</span><span class="n">cell_L</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T_f</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">*</span> <span class="n">dz</span>
+
+                <span class="c1"># Contribution to cell_R (inflow is positive)</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">cell_R</span><span class="p">,</span> <span class="n">cell_R</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T_f</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">cell_R</span><span class="p">,</span> <span class="n">cell_L</span><span class="p">]</span> <span class="o">-=</span> <span class="n">T_f</span>
+                <span class="n">b</span><span class="p">[</span><span class="n">cell_R</span><span class="p">]</span> <span class="o">-=</span> <span class="n">T_f</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rho</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">*</span> <span class="n">dz</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Boundary face. cell_b is the only adjacent cell.</span>
+                <span class="n">cell_b</span> <span class="o">=</span> <span class="n">cell_L</span> <span class="k">if</span> <span class="n">cell_L</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">cell_R</span>
+                <span class="n">bc_val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_bc_value</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span> <span class="n">bc_values</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">A</span><span class="p">[</span><span class="n">cell_b</span><span class="p">,</span> <span class="n">cell_b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T_f</span>
+                    <span class="n">b</span><span class="p">[</span><span class="n">cell_b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T_f</span> <span class="o">*</span> <span class="n">bc_val</span>
+                <span class="k">elif</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;neumann&quot;</span><span class="p">:</span>
+                    <span class="c1"># Specified flux into the cell [kg/s]. Zero by default</span>
+                    <span class="c1"># (closed boundary). T_f does not appear on the diagonal</span>
+                    <span class="c1"># — mass balance is preserved without coupling to a BC P.</span>
+                    <span class="k">if</span> <span class="n">bc_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">b</span><span class="p">[</span><span class="n">cell_b</span><span class="p">]</span> <span class="o">+=</span> <span class="n">bc_val</span>
+
+        <span class="k">return</span> <span class="n">A</span><span class="o">.</span><span class="n">tocsr</span><span class="p">(),</span> <span class="n">b</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_select_bc_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">normal</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">bc_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pick the boundary value applicable to a face based on its outward normal.</span>
+
+<span class="sd">        bc_values layouts (see ``build_matrix`` docstring):</span>
+<span class="sd">        - length 6: ``[-x, +x, -y, +y, -z, +z]``;</span>
+<span class="sd">        - length 2 (legacy): ``[low, high]`` based on `np.any(normal &lt; 0)`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">bc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">bc_values</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="mi">6</span><span class="p">:</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">normal</span><span class="p">)))</span>
+            <span class="n">side</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">normal</span><span class="p">[</span><span class="n">ax</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">1</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">bc</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ax</span> <span class="o">+</span> <span class="n">side</span><span class="p">])</span>
+        <span class="c1"># Legacy two-element form</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">normal</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">bc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">bc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">bc</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">bc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_1d_matrix</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">A</span><span class="p">:</span> <span class="n">lil_matrix</span><span class="p">,</span>
+        <span class="n">b</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bc_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">bc_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">lil_matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build 1D system matrix.&quot;&quot;&quot;</span>
+        <span class="n">nx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">nx</span>
+        <span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transmissibilities</span>
+
+        <span class="c1"># Interior cells</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nx</span><span class="p">):</span>
+            <span class="c1"># Left face</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="c1"># Dirichlet BC: p = bc_values[0]</span>
+                    <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Neumann BC: flux specified</span>
+                    <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">0</span>  <span class="c1"># Will be handled by b</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>  <span class="c1"># Left face transmissibility</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+            <span class="c1"># Right face</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">nx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">bc_type</span> <span class="o">==</span> <span class="s2">&quot;dirichlet&quot;</span> <span class="ow">and</span> <span class="n">bc_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">bc_values</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-=</span> <span class="n">T</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">A</span><span class="p">,</span> <span class="n">b</span>
+
+<div class="viewcode-block" id="TPFASolver.solve">
+<a class="viewcode-back" href="../../../tpfa_solver.html#garuda.TPFASolver.solve">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">solve</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">source_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bc_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span>
+        <span class="n">bc_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">solver</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;direct&quot;</span><span class="p">,</span>
+        <span class="n">tol</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-10</span><span class="p">,</span>
+        <span class="n">max_iter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Solve the pressure equation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source_terms : ndarray</span>
+<span class="sd">            Source/sink terms [kg/s]</span>
+<span class="sd">        bc_type : str</span>
+<span class="sd">            Boundary condition type</span>
+<span class="sd">        bc_values : ndarray, optional</span>
+<span class="sd">            Boundary values (Dirichlet pressures or Neumann fluxes)</span>
+<span class="sd">        solver : str</span>
+<span class="sd">            Linear solver: &#39;direct&#39; (spsolve) or &#39;iterative&#39; (CG)</span>
+<span class="sd">        tol : float</span>
+<span class="sd">            Convergence tolerance (iterative solver)</span>
+<span class="sd">        max_iter : int</span>
+<span class="sd">            Maximum iterations (iterative solver)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pressure : ndarray</span>
+<span class="sd">            Cell pressures [Pa]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_matrix</span><span class="p">(</span><span class="n">source_terms</span><span class="p">,</span> <span class="n">bc_type</span><span class="p">,</span> <span class="n">bc_values</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">solver</span> <span class="o">==</span> <span class="s2">&quot;direct&quot;</span><span class="p">:</span>
+            <span class="n">pressure</span> <span class="o">=</span> <span class="n">spsolve</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">solver</span> <span class="o">==</span> <span class="s2">&quot;iterative&quot;</span><span class="p">:</span>
+            <span class="n">pressure</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">cg</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">maxiter</span><span class="o">=</span><span class="n">max_iter</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">info</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CG solver did not converge (info=</span><span class="si">{</span><span class="n">info</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown solver: </span><span class="si">{</span><span class="n">solver</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pressure</span></div>
+
+
+<div class="viewcode-block" id="TPFASolver.compute_residual">
+<a class="viewcode-back" href="../../../tpfa_solver.html#garuda.TPFASolver.compute_residual">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_residual</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">pressure</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">source_terms</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">bc_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;dirichlet&quot;</span><span class="p">,</span>
+        <span class="n">bc_values</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute mass balance residual using system matrix A·p - b.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pressure : ndarray</span>
+<span class="sd">            Current pressure field</span>
+<span class="sd">        source_terms : ndarray</span>
+<span class="sd">            Source/sink terms</span>
+<span class="sd">        bc_type : str, optional</span>
+<span class="sd">            Boundary condition type (needed for boundary flux accounting)</span>
+<span class="sd">        bc_values : ndarray, optional</span>
+<span class="sd">            Boundary condition values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        residual : ndarray</span>
+<span class="sd">            Mass balance residual for each cell [kg/s]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">A</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_matrix</span><span class="p">(</span><span class="n">source_terms</span><span class="p">,</span> <span class="n">bc_type</span><span class="p">,</span> <span class="n">bc_values</span><span class="p">)</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">A</span> <span class="o">@</span> <span class="n">pressure</span> <span class="o">-</span> <span class="n">b</span>
+        <span class="k">return</span> <span class="n">residual</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

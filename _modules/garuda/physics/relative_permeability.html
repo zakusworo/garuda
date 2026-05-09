@@ -1,0 +1,432 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.physics.relative_permeability &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.physics.relative_permeability</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.physics.relative_permeability</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Relative permeability models for multiphase flow in porous media.</span>
+
+<span class="sd">Implements standard parametric models (Corey/Brooks-Corey, van Genuchten-Mualem,</span>
+<span class="sd">linear) commonly used in petroleum reservoir and geothermal simulation.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="RelativePermeabilityModel">
+<a class="viewcode-back" href="../../../garuda.html#garuda.RelativePermeabilityModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RelativePermeabilityModel</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for relative permeability models.</span>
+
+<span class="sd">    Relative permeability describes how the presence of one fluid phase</span>
+<span class="sd">    affects the mobility of another phase in a porous medium.</span>
+
+<span class="sd">    All subclasses must implement ``__call__(S_w)`` returning ``(krw, krn)``,</span>
+<span class="sd">    where *krw* is the wetting-phase (water) relative permeability and</span>
+<span class="sd">    *krn* is the non-wetting-phase (oil/gas/steam) relative permeability.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S_w</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (krw, krn) for water saturation(s).&quot;&quot;&quot;</span>
+        <span class="o">...</span>
+
+<div class="viewcode-block" id="RelativePermeabilityModel.effective_saturation">
+<a class="viewcode-back" href="../../../garuda.html#garuda.RelativePermeabilityModel.effective_saturation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">effective_saturation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S_w</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute effective water saturation Se.</span>
+
+<span class="sd">        Se = (S_w - Swr) / (1 - Swr - Snr)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        S_w : float or np.ndarray</span>
+<span class="sd">            Water saturation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        np.ndarray</span>
+<span class="sd">            Effective water saturation clipped to [0, 1].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">S_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">S_w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">((</span><span class="n">S_w</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span><span class="p">)</span> <span class="o">/</span> <span class="n">d</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span> <span class="k">if</span> <span class="n">d</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">S_w</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CoreyRelativePermeability">
+<a class="viewcode-back" href="../../../garuda.html#garuda.CoreyRelativePermeability">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CoreyRelativePermeability</span><span class="p">(</span><span class="n">RelativePermeabilityModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Brooks-Corey (power-law) relative permeability model.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        k_{rw} = k_{rw0} \cdot S_e^{N_w}</span>
+<span class="sd">        k_{rn} = k_{rn0} \cdot (1 - S_e)^{N_n}</span>
+
+<span class="sd">    where :math:`S_e` is the effective water saturation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    krw0 : float</span>
+<span class="sd">        End-point wetting-phase relative permeability (default 1.0).</span>
+<span class="sd">    krn0 : float</span>
+<span class="sd">        End-point non-wetting-phase relative permeability (default 1.0).</span>
+<span class="sd">    nw : float</span>
+<span class="sd">        Wetting-phase Corey exponent :math:`N_w` (default 2.0, &gt; 0).</span>
+<span class="sd">    nn : float</span>
+<span class="sd">        Non-wetting-phase Corey exponent :math:`N_n` (default 2.0, &gt; 0).</span>
+<span class="sd">    swr : float</span>
+<span class="sd">        Irreducible water saturation :math:`S_{wr}` (default 0.2).</span>
+<span class="sd">    snr : float</span>
+<span class="sd">        Residual non-wetting saturation :math:`S_{nr}` (default 0.0).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">krw0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">krn0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">nw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">nn</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">swr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span>
+    <span class="n">snr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">krw0</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;krw0 must be non-negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">krn0</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;krn0 must be non-negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nw</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;nw (wetting exponent) must be &gt; 0&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;nn (non-wetting exponent) must be &gt; 0&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;swr must be in [0, 1)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;snr must be in [0, 1 - swr)&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S_w</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (krw, krn) for water saturation(s).&quot;&quot;&quot;</span>
+        <span class="n">Se</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_saturation</span><span class="p">(</span><span class="n">S_w</span><span class="p">)</span>
+        <span class="n">krw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">krw0</span> <span class="o">*</span> <span class="n">Se</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">nw</span>
+        <span class="n">krn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">krn0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">Se</span><span class="p">)</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span>
+        <span class="k">return</span> <span class="n">krw</span><span class="p">,</span> <span class="n">krn</span></div>
+
+
+
+<div class="viewcode-block" id="VanGenuchtenMualem">
+<a class="viewcode-back" href="../../../garuda.html#garuda.VanGenuchtenMualem">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">VanGenuchtenMualem</span><span class="p">(</span><span class="n">RelativePermeabilityModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;van Genuchten-Mualem relative permeability model.</span>
+
+<span class="sd">    Commonly used for unsaturated flow and geothermal systems where</span>
+<span class="sd">    the retention curve is described by the van Genuchten model.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        m = 1 - 1/n</span>
+
+<span class="sd">        k_{rw} = S_e^{0.5} \cdot \bigl[1 - (1 - S_e^{1/m})^m\bigr]^2</span>
+
+<span class="sd">        k_{rn} = (1 - S_e)^{0.5} \cdot \bigl[1 - S_e^{1/m}\bigr]^{2m}</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n : float</span>
+<span class="sd">        Pore-size distribution parameter :math:`n` (default 2.0, must be &gt; 1).</span>
+<span class="sd">    swr : float</span>
+<span class="sd">        Irreducible water saturation :math:`S_{wr}` (default 0.2).</span>
+<span class="sd">    snr : float</span>
+<span class="sd">        Residual non-wetting saturation :math:`S_{nr}` (default 0.0).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">n</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">swr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span>
+    <span class="n">snr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;n must be &gt; 1&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;swr must be in [0, 1)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;snr must be in [0, 1 - swr)&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_m</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S_w</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (krw, krn) for water saturation(s).&quot;&quot;&quot;</span>
+        <span class="n">Se</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_saturation</span><span class="p">(</span><span class="n">S_w</span><span class="p">)</span>
+        <span class="n">Se_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Se</span> <span class="o">&lt;</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="n">Se</span><span class="p">)</span>
+        <span class="n">one_minus_Se</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Se</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">Se</span><span class="p">)</span>
+
+        <span class="n">term</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">Se_safe</span> <span class="o">**</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_m</span><span class="p">)</span>
+        <span class="n">term_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">term</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">term</span><span class="p">)</span>
+
+        <span class="n">krw</span> <span class="o">=</span> <span class="n">Se_safe</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">term_safe</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_m</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">krn</span> <span class="o">=</span> <span class="n">one_minus_Se</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">term_safe</span> <span class="o">**</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_m</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">krw</span><span class="p">,</span> <span class="n">krn</span></div>
+
+
+
+<div class="viewcode-block" id="LinearRelativePermeability">
+<a class="viewcode-back" href="../../../garuda.html#garuda.LinearRelativePermeability">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LinearRelativePermeability</span><span class="p">(</span><span class="n">RelativePermeabilityModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Linear relative permeability model.</span>
+
+<span class="sd">    Simple straight-line interpolation between end points, useful for</span>
+<span class="sd">    testing, validation, and as a conservative (pessimistic) estimate.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        k_{rw} = k_{rw0} \cdot S_e</span>
+<span class="sd">        k_{rn} = k_{rn0} \cdot (1 - S_e)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    krw0 : float</span>
+<span class="sd">        End-point wetting-phase relative permeability (default 1.0).</span>
+<span class="sd">    krn0 : float</span>
+<span class="sd">        End-point non-wetting-phase relative permeability (default 1.0).</span>
+<span class="sd">    swr : float</span>
+<span class="sd">        Irreducible water saturation (default 0.2).</span>
+<span class="sd">    snr : float</span>
+<span class="sd">        Residual non-wetting saturation (default 0.0).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">krw0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">krn0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">swr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span>
+    <span class="n">snr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">krw0</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;krw0 must be non-negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">krn0</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;krn0 must be non-negative&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;swr must be in [0, 1)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">snr</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swr</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;snr must be in [0, 1 - swr)&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S_w</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (krw, krn) for water saturation(s).&quot;&quot;&quot;</span>
+        <span class="n">Se</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">effective_saturation</span><span class="p">(</span><span class="n">S_w</span><span class="p">)</span>
+        <span class="n">krw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">krw0</span> <span class="o">*</span> <span class="n">Se</span>
+        <span class="n">krn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">krn0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">Se</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">krw</span><span class="p">,</span> <span class="n">krn</span></div>
+
+
+
+<div class="viewcode-block" id="StoneIRelativePermeability">
+<a class="viewcode-back" href="../../../garuda.html#garuda.StoneIRelativePermeability">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StoneIRelativePermeability</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Stone I three-phase relative permeability model.</span>
+
+<span class="sd">    Estimates oil relative permeability in a three-phase system</span>
+<span class="sd">    (water/oil/gas) from two-phase data.</span>
+
+<span class="sd">    .. math::</span>
+<span class="sd">        k_{ro} = \frac{k_{row}(S_w) \cdot k_{rog}(S_l) \cdot S_o}</span>
+<span class="sd">                       {(1 - S_w)(1 - S_g)}</span>
+
+<span class="sd">    where :math:`S_g = 1 - S_w - S_o`, :math:`S_l = S_o + S_w` is the</span>
+<span class="sd">    liquid (wetting in the oil/gas system) saturation, :math:`k_{row}(S_w)`</span>
+<span class="sd">    is the oil rel-perm from the two-phase oil/water curve, and</span>
+<span class="sd">    :math:`k_{rog}(S_l)` is the oil rel-perm from the two-phase</span>
+<span class="sd">    oil/gas curve.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    krow_model : RelativePermeabilityModel</span>
+<span class="sd">        Two-phase oil/water relative permeability model.</span>
+<span class="sd">    krog_model : RelativePermeabilityModel</span>
+<span class="sd">        Two-phase oil/gas relative permeability model.</span>
+<span class="sd">    swc : float</span>
+<span class="sd">        Connate water saturation (default 0.2).</span>
+<span class="sd">    sorw : float</span>
+<span class="sd">        Residual oil saturation in oil/water system (default 0.15).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">krow_model</span><span class="p">:</span> <span class="n">RelativePermeabilityModel</span>
+    <span class="n">krog_model</span><span class="p">:</span> <span class="n">RelativePermeabilityModel</span>
+    <span class="n">swc</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span>
+    <span class="n">sorw</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.15</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">swc</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;swc must be in [0, 1)&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sorw</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">swc</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sorw must be in [0, 1 - swc)&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S_w</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">S_o</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (krw, kro, krg) three-phase relative permeabilities.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        S_w : float or np.ndarray</span>
+<span class="sd">            Water saturation.</span>
+<span class="sd">        S_o : float or np.ndarray</span>
+<span class="sd">            Oil saturation.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple</span>
+<span class="sd">            (krw, kro, krg)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">S_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">S_w</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">S_o</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">S_o</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="n">S_g</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">S_w</span> <span class="o">-</span> <span class="n">S_o</span><span class="p">)</span>
+        <span class="n">S_l</span> <span class="o">=</span> <span class="n">S_o</span> <span class="o">+</span> <span class="n">S_w</span>  <span class="c1"># liquid sat: wetting phase in the o/g system</span>
+
+        <span class="c1"># Two-phase rel-perm models follow the convention</span>
+        <span class="c1"># ``model(S_wetting) -&gt; (kr_wetting, kr_non_wetting)``.</span>
+        <span class="c1"># In the oil/water system water is wetting:</span>
+        <span class="c1">#   krow_model(S_w) -&gt; (krw, kro_in_ow)</span>
+        <span class="c1"># In the oil/gas system the liquid (oil+water) is wetting:</span>
+        <span class="c1">#   krog_model(S_l) -&gt; (kro_in_og, krg)</span>
+        <span class="n">krw</span><span class="p">,</span> <span class="n">kro_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">krow_model</span><span class="p">(</span><span class="n">S_w</span><span class="p">)</span>
+        <span class="n">kro_g</span><span class="p">,</span> <span class="n">krg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">krog_model</span><span class="p">(</span><span class="n">S_l</span><span class="p">)</span>
+
+        <span class="c1"># Aziz-Settari Stone I:</span>
+        <span class="c1">#   kro = (kro_w * kro_g) * S_o / [(1 - S_w)(1 - S_g)]</span>
+        <span class="n">denom</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">S_w</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">S_g</span><span class="p">)</span>
+        <span class="n">denom_safe</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">denom</span> <span class="o">&gt;</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="n">denom</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">kro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">denom</span> <span class="o">&gt;</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="p">(</span><span class="n">kro_w</span> <span class="o">*</span> <span class="n">kro_g</span><span class="p">)</span> <span class="o">*</span> <span class="n">S_o</span> <span class="o">/</span> <span class="n">denom_safe</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">kro</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">kro</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">krw</span><span class="p">,</span> <span class="n">kro</span><span class="p">,</span> <span class="n">krg</span></div>
+
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;RelativePermeabilityModel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;CoreyRelativePermeability&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;VanGenuchtenMualem&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;LinearRelativePermeability&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;StoneIRelativePermeability&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

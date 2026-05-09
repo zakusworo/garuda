@@ -1,0 +1,756 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.core.dual_porosity &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.core.dual_porosity</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.core.dual_porosity</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">dual_porosity.py</span>
+
+<span class="sd">Dual-porosity models for fractured reservoir simulation.</span>
+
+<span class="sd">Implements the classical Warren-Root pseudo-steady-state approach as well as</span>
+<span class="sd">transient (fine-grid) matrix-fracture transfer formulations commonly used in</span>
+<span class="sd">groundwater, petroleum, and geothermal reservoir engineering.</span>
+
+<span class="sd">The module supports:</span>
+<span class="sd">  - Warren-Root shape-factor based interporosity flow</span>
+<span class="sd">  - Kazemi-Gilman-Elsharkawy extension for anisotropic fractures</span>
+<span class="sd">  - Lim-Aguilera transient transfer function</span>
+<span class="sd">  - Conversion between single-porosity and dual-porosity parameters</span>
+<span class="sd">  - Temperature-dependent fracture/matrix property scaling</span>
+
+<span class="sd">Typical usage::</span>
+
+<span class="sd">    from garuda.core.dual_porosity import DualPorosityModel</span>
+
+<span class="sd">    model = DualPorosityModel(</span>
+<span class="sd">        matrix_porosity=0.15,</span>
+<span class="sd">        matrix_permeability=1e-15,   # m^2 (~1 mD)</span>
+<span class="sd">        fracture_porosity=0.01,</span>
+<span class="sd">        fracture_permeability=1e-12, # m^2 (~1000 mD)</span>
+<span class="sd">        fracture_spacing=(10.0, 10.0, 10.0),  # mx, my, mz in metres</span>
+<span class="sd">    )</span>
+
+<span class="sd">    # Shape factor for cubic matrix blocks</span>
+<span class="sd">    sigma = model.warren_root_shape_factor()</span>
+
+<span class="sd">    # Interporosity flow coefficient</span>
+<span class="sd">    alpha = model.interporosity_flow_coefficient(</span>
+<span class="sd">        compressibility=1e-9,  # 1/Pa</span>
+<span class="sd">        viscosity=1e-3,        # Pa.s</span>
+<span class="sd">    )</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">enum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">numpy.typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">NDArray</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;TransferModel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;BlockGeometry&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DualPorosityParams&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;DualPorosityModel&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;convert_single_to_dual&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;convert_dual_to_single&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="TransferModel">
+<a class="viewcode-back" href="../../../garuda.html#garuda.TransferModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">TransferModel</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Supported matrix–fracture transfer formulations.&quot;&quot;&quot;</span>
+
+    <span class="n">WARREN_ROOT_PSS</span> <span class="o">=</span> <span class="s2">&quot;warren_root_pss&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pseudo-steady-state ( Warren &amp; Root, 1963 )&quot;&quot;&quot;</span>
+
+    <span class="n">KAZEMI_GILMAN</span> <span class="o">=</span> <span class="s2">&quot;kazemi_gilman&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Anisotropic extension ( Kazemi, Gilman &amp; Elsharkawy, 1992 )&quot;&quot;&quot;</span>
+
+    <span class="n">LIM_AGUILERA</span> <span class="o">=</span> <span class="s2">&quot;lim_aguilera&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transient transfer with series solution ( Lim &amp; Aguilera, 1996 )&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="BlockGeometry">
+<a class="viewcode-back" href="../../../garuda.html#garuda.BlockGeometry">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BlockGeometry</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Idealised matrix-block geometries for shape-factor selection.&quot;&quot;&quot;</span>
+
+    <span class="n">SLAB_X</span> <span class="o">=</span> <span class="s2">&quot;slab_x&quot;</span>
+    <span class="n">SLAB_Y</span> <span class="o">=</span> <span class="s2">&quot;slab_y&quot;</span>
+    <span class="n">SLAB_Z</span> <span class="o">=</span> <span class="s2">&quot;slab_z&quot;</span>
+    <span class="n">SLAB_RADIAL</span> <span class="o">=</span> <span class="s2">&quot;slab_radial&quot;</span>
+    <span class="n">CUBE</span> <span class="o">=</span> <span class="s2">&quot;cube&quot;</span>
+    <span class="n">SPHERE</span> <span class="o">=</span> <span class="s2">&quot;sphere&quot;</span>
+    <span class="n">PRISM</span> <span class="o">=</span> <span class="s2">&quot;prism&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="DualPorosityParams">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityParams">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DualPorosityParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Immutable container for dual-porosity petrophysical properties.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    phi_m : float</span>
+<span class="sd">        Matrix porosity (fraction, 0–1).</span>
+<span class="sd">    phi_f : float</span>
+<span class="sd">        Fracture porosity (fraction, 0–1).</span>
+<span class="sd">    k_m : float</span>
+<span class="sd">        Matrix intrinsic permeability (m²).</span>
+<span class="sd">    k_f : float</span>
+<span class="sd">        Fracture intrinsic permeability (m²).</span>
+<span class="sd">    Lx, Ly, Lz : float</span>
+<span class="sd">        Average matrix-block dimensions (m).</span>
+<span class="sd">    tau : float, optional</span>
+<span class="sd">        Tortuosity factor (&gt;1). Default 1.0.</span>
+<span class="sd">    alpha_wr : float, optional</span>
+<span class="sd">        Warren-Root shape-factor constant (geometry-dependent).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">phi_m</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">phi_f</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">k_m</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">k_f</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">Lx</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">Ly</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">Lz</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">alpha_wr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total_porosity</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return total storativity-weighted porosity.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi_m</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">storativity_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        omega = phi_f*c_f / (phi_m*c_m + phi_f*c_f).</span>
+
+<span class="sd">        When compressibilities are equal this reduces to phi_f / (phi_m + phi_f).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi_m</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Shape-factor tables (constant part of σ·L²)</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="n">_SHAPE_FACTOR_CONSTANT</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">BlockGeometry</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Geometry          constant C in  σ = C / L²</span>
+    <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_X</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Y</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Z</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_RADIAL</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span>
+    <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">CUBE</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SPHERE</span><span class="p">:</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">PRISM</span><span class="p">:</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pick_geometry</span><span class="p">(</span><span class="n">Lx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Ly</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Lz</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BlockGeometry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Heuristic to select a default geometry from block dimensions.&quot;&quot;&quot;</span>
+    <span class="n">dims</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">Lx</span><span class="p">,</span> <span class="n">Ly</span><span class="p">,</span> <span class="n">Lz</span><span class="p">])</span>
+    <span class="n">ratio</span> <span class="o">=</span> <span class="n">dims</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ratio</span> <span class="o">&gt;</span> <span class="mf">5.0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">Lx</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_X</span>
+        <span class="k">if</span> <span class="n">dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">Ly</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Y</span>
+        <span class="k">return</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Z</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Lx</span> <span class="o">-</span> <span class="n">Ly</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Ly</span> <span class="o">-</span> <span class="n">Lz</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">CUBE</span>
+    <span class="k">return</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">PRISM</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Core model</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="DualPorosityModel">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DualPorosityModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Warren-Root type dual-porosity engine.</span>
+
+<span class="sd">    Provides shape factors, interporosity transfer coefficients, and</span>
+<span class="sd">    dimensionless groups used in analytical solutions and numerical</span>
+<span class="sd">    reservoir simulators (e.g. TOUGH2, ECLIPSE-DUALS, CMG).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DualPorosityModel.__init__">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">matrix_porosity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">matrix_permeability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">fracture_porosity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">fracture_permeability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">fracture_spacing</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">geometry</span><span class="p">:</span> <span class="n">BlockGeometry</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tortuosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix_porosity : float</span>
+<span class="sd">            dimensionless matrix porosity.</span>
+<span class="sd">        matrix_permeability : float</span>
+<span class="sd">            matrix permeability in m².</span>
+<span class="sd">        fracture_porosity : float</span>
+<span class="sd">            dimensionless fracture porosity.</span>
+<span class="sd">        fracture_permeability : float</span>
+<span class="sd">            fracture permeability in m².</span>
+<span class="sd">        fracture_spacing : tuple(float, float, float)</span>
+<span class="sd">            Average distance between fractures in x, y, z (m).</span>
+<span class="sd">        geometry : BlockGeometry | None</span>
+<span class="sd">            If None, inferred from ``fracture_spacing`` ratios.</span>
+<span class="sd">        tortuosity : float</span>
+<span class="sd">            Tortuosity factor ≥ 1.0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lz</span> <span class="o">=</span> <span class="n">fracture_spacing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi_m</span> <span class="o">=</span> <span class="n">matrix_porosity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span> <span class="o">=</span> <span class="n">fracture_porosity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_m</span> <span class="o">=</span> <span class="n">matrix_permeability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k_f</span> <span class="o">=</span> <span class="n">fracture_permeability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">tortuosity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">=</span> <span class="n">geometry</span> <span class="ow">or</span> <span class="n">_pick_geometry</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lz</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_params</span> <span class="o">=</span> <span class="n">DualPorosityParams</span><span class="p">(</span>
+            <span class="n">phi_m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">phi_m</span><span class="p">,</span>
+            <span class="n">phi_f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span><span class="p">,</span>
+            <span class="n">k_m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k_m</span><span class="p">,</span>
+            <span class="n">k_f</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">k_f</span><span class="p">,</span>
+            <span class="n">Lx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="p">,</span>
+            <span class="n">Ly</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span>
+            <span class="n">Lz</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">Lz</span><span class="p">,</span>
+            <span class="n">tau</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Shape factors</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DualPorosityModel.warren_root_shape_factor">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.warren_root_shape_factor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">warren_root_shape_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geometry</span><span class="p">:</span> <span class="n">BlockGeometry</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the Warren-Root shape factor σ (1/m²).</span>
+
+<span class="sd">        For isotropic cubic blocks of side ``L``:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \sigma = \pi^2 \left( \frac{1}{L_x^2} + \frac{1}{L_y^2}</span>
+<span class="sd">                     + \frac{1}{L_z^2} \right)</span>
+
+<span class="sd">        For slabs use :math:`\pi^2 / 4L^2`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">geom</span> <span class="o">=</span> <span class="n">geometry</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span>
+        <span class="k">if</span> <span class="n">geom</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_X</span><span class="p">,</span>
+            <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Y</span><span class="p">,</span>
+            <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Z</span><span class="p">,</span>
+            <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_RADIAL</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="c1"># Identify the dominant fracture spacing</span>
+            <span class="n">dims</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lz</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">geom</span> <span class="o">==</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_X</span><span class="p">:</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span>
+            <span class="k">elif</span> <span class="n">geom</span> <span class="o">==</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Y</span><span class="p">:</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ly</span>
+            <span class="k">elif</span> <span class="n">geom</span> <span class="o">==</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">SLAB_Z</span><span class="p">:</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lz</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">L</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dims</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+            <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mf">4.0</span> <span class="o">*</span> <span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c1"># General orthogonal (Kazemi / prism) form</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Lz</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DualPorosityModel.kazemi_shape_factor">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.kazemi_shape_factor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">kazemi_shape_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Kazemi-Gilman shape factor for anisotropic fracture networks.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \sigma = 4 \left( \frac{1}{L_x^2} + \frac{1}{L_y^2}</span>
+<span class="sd">                     + \frac{1}{L_z^2} \right)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">4.0</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Lx</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Ly</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Lz</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DualPorosityModel.lim_aguilera_shape_factor">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.lim_aguilera_shape_factor">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lim_aguilera_shape_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Lim–Aguilera pseudo-steady-state shape factor derived from</span>
+<span class="sd">        matrix-block transient pressure analysis.</span>
+
+<span class="sd">        For a cubic block::</span>
+
+<span class="sd">            σ = 25.1 / L²</span>
+
+<span class="sd">        For slab::</span>
+
+<span class="sd">            σ = π² / (4L²)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span> <span class="o">==</span> <span class="n">BlockGeometry</span><span class="o">.</span><span class="n">CUBE</span><span class="p">:</span>
+            <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span>  <span class="c1"># assumed equal sides</span>
+            <span class="k">return</span> <span class="mf">25.13</span> <span class="o">/</span> <span class="p">(</span><span class="n">L</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">warren_root_shape_factor</span><span class="p">()</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Transfer coefficient</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DualPorosityModel.interporosity_flow_coefficient">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.interporosity_flow_coefficient">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">interporosity_flow_coefficient</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">compressibility</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">TransferModel</span> <span class="o">=</span> <span class="n">TransferModel</span><span class="o">.</span><span class="n">WARREN_ROOT_PSS</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Interporosity flow coefficient λ (dimensionless).</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \lambda = \alpha \frac{k_m}{k_f} L_f^2</span>
+
+<span class="sd">        where :math:`\alpha = \sigma / \tau` and :math:`L_f` is a</span>
+<span class="sd">        characteristic fracture length (taken as the harmonic mean of the</span>
+<span class="sd">        fracture spacings).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        compressibility, viscosity : float, optional</span>
+<span class="sd">            Accepted for API stability with earlier releases but **not used**</span>
+<span class="sd">            in this geometric definition of λ. Retained as keyword arguments</span>
+<span class="sd">            so existing call sites (and ``lambda_group``) continue to work.</span>
+<span class="sd">        model : TransferModel</span>
+<span class="sd">            Which shape factor to employ.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            λ (dimensionless).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># compressibility / viscosity intentionally unused — see docstring.</span>
+        <span class="k">del</span> <span class="n">compressibility</span><span class="p">,</span> <span class="n">viscosity</span>
+
+        <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="n">TransferModel</span><span class="o">.</span><span class="n">KAZEMI_GILMAN</span><span class="p">:</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kazemi_shape_factor</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="n">TransferModel</span><span class="o">.</span><span class="n">LIM_AGUILERA</span><span class="p">:</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lim_aguilera_shape_factor</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">warren_root_shape_factor</span><span class="p">()</span>
+
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span>
+        <span class="c1"># Characteristic length = harmonic mean of spacings</span>
+        <span class="n">Lf</span> <span class="o">=</span> <span class="mf">3.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lx</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Ly</span> <span class="o">+</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">Lz</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">alpha</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_m</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_f</span> <span class="o">*</span> <span class="n">Lf</span><span class="o">**</span><span class="mi">2</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Dimensionless groups</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DualPorosityModel.omega">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.omega">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">omega</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c_m</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">c_f</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Storativity ratio ω (dimensionless).</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \omega = \frac{\phi_f c_f}{\phi_m c_m + \phi_f c_f}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span> <span class="o">*</span> <span class="n">c_f</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">phi_m</span> <span class="o">*</span> <span class="n">c_m</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span> <span class="o">*</span> <span class="n">c_f</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DualPorosityModel.lambda_group">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.lambda_group">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lambda_group</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">compressibility</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">TransferModel</span> <span class="o">=</span> <span class="n">TransferModel</span><span class="o">.</span><span class="n">WARREN_ROOT_PSS</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Alias for :meth:`interporosity_flow_coefficient` with</span>
+<span class="sd">        :math:`c_m = c_f = c_t`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interporosity_flow_coefficient</span><span class="p">(</span>
+            <span class="n">compressibility</span><span class="o">=</span><span class="n">compressibility</span><span class="p">,</span>
+            <span class="n">viscosity</span><span class="o">=</span><span class="n">viscosity</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Analytical helpers — transient pressure in matrix block</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DualPorosityModel.lim_aguilera_transfer_function">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.lim_aguilera_transfer_function">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lim_aguilera_transfer_function</span><span class="p">(</span>
+        <span class="n">t_dim</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">],</span>
+        <span class="n">n_terms</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">]:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dimensionless transient interporosity transfer function for</span>
+<span class="sd">        a slab matrix block.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            f(t_D) = \sum_{n=1}^{\infty}</span>
+<span class="sd">                     \frac{2}{n^2 \pi^2}</span>
+<span class="sd">                     \left[1 - \exp(-n^2 \pi^2 t_D)\right]</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        t_dim : NDArray[np.float64]</span>
+<span class="sd">            Dimensionless time :math:`t_D = k_m t / (\phi_m c_m \mu L^2)`.</span>
+<span class="sd">        n_terms : int</span>
+<span class="sd">            Number of series terms.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        NDArray[np.float64]</span>
+<span class="sd">            Transfer-function values, same shape as ``t_dim``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">t_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_terms</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">coeff</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">/</span> <span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="n">coeff</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">n</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">t</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="DualPorosityModel.pseudo_steady_state_time">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.pseudo_steady_state_time">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pseudo_steady_state_time</span><span class="p">(</span>
+        <span class="n">matrix_diffusivity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">characteristic_length</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Estimate the time to reach pseudo-steady-state (PSS) within a</span>
+<span class="sd">        matrix block.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            t_{\text{PSS}} \approx 0.1 \frac{L^2}{\eta_m}</span>
+
+<span class="sd">        where :math:`\eta_m = k_m / (\phi_m c_m \mu)` is the matrix</span>
+<span class="sd">        hydraulic diffusivity.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        matrix_diffusivity : float</span>
+<span class="sd">            η_m (m²/s).</span>
+<span class="sd">        characteristic_length : float</span>
+<span class="sd">            L (m), typically half the fracture spacing.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            t_PSS (s).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">characteristic_length</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="n">matrix_diffusivity</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># Property scaling (temperature-dependent)</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="DualPorosityModel.temperature_scale_permeability">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.temperature_scale_permeability">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">temperature_scale_permeability</span><span class="p">(</span>
+        <span class="n">k_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">T_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">T_new</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">activation_energy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Scale permeability with temperature using an Arrhenius-like law.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            k(T) = k_{\text{ref}} \exp\left[ -\frac{E_a}{R}</span>
+<span class="sd">                   \left(\frac{1}{T} - \frac{1}{T_{\text{ref}}}\right) \right]</span>
+
+<span class="sd">        By default :math:`E_a = 0` so permeability is independent of T.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        k_ref : float</span>
+<span class="sd">            Reference permeability (m²).</span>
+<span class="sd">        T_ref, T_new : float</span>
+<span class="sd">            Temperatures in **K**.</span>
+<span class="sd">        activation_energy : float</span>
+<span class="sd">            E_a (J/mol).  Default 0.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Scaled permeability.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">activation_energy</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">k_ref</span>
+        <span class="n">R</span> <span class="o">=</span> <span class="mf">8.314462618</span>  <span class="c1"># J/(mol·K)</span>
+        <span class="k">return</span> <span class="n">k_ref</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">activation_energy</span> <span class="o">/</span> <span class="n">R</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">T_new</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">T_ref</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="DualPorosityModel.temperature_scale_porosity">
+<a class="viewcode-back" href="../../../garuda.html#garuda.DualPorosityModel.temperature_scale_porosity">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">temperature_scale_porosity</span><span class="p">(</span>
+        <span class="n">phi_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">T_ref</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">T_new</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">thermal_expansion_coeff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Linear thermal expansion of porosity.</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            \phi(T) = \phi_{\text{ref}} \left[1 + \alpha_T (T - T_{\text{ref}})\right]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">thermal_expansion_coeff</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">phi_ref</span>
+        <span class="k">return</span> <span class="n">phi_ref</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">thermal_expansion_coeff</span> <span class="o">*</span> <span class="p">(</span><span class="n">T_new</span> <span class="o">-</span> <span class="n">T_ref</span><span class="p">))</span></div>
+
+
+    <span class="c1"># ------------------------------------------------------------------</span>
+    <span class="c1"># String / repr helpers</span>
+    <span class="c1"># ------------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;phi_m=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">phi_m</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> phi_f=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">phi_f</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;k_m=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">k_m</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2"> k_f=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">k_f</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;geometry=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Conversion utilities</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_single_to_dual</span><span class="p">(</span>
+    <span class="n">single_porosity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">single_permeability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">fracture_intensity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">aperture</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">matrix_block_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DualPorosityParams</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert measured single-porosity properties into an equivalent</span>
+<span class="sd">    dual-porosity parameter set.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    single_porosity : float</span>
+<span class="sd">        Measured (bulk) porosity.</span>
+<span class="sd">    single_permeability : float</span>
+<span class="sd">        Measured (bulk) permeability (m²).</span>
+<span class="sd">    fracture_intensity : float</span>
+<span class="sd">        Number of fractures per unit length (1/m).</span>
+<span class="sd">    aperture : float</span>
+<span class="sd">        Average fracture aperture (m).</span>
+<span class="sd">    matrix_block_size : tuple(float, float, float)</span>
+<span class="sd">        Dimensions of the equivalent matrix block (m).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    DualPorosityParams</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Fracture porosity from parallel-plate approximation</span>
+    <span class="n">phi_f</span> <span class="o">=</span> <span class="n">fracture_intensity</span> <span class="o">*</span> <span class="n">aperture</span>
+    <span class="k">if</span> <span class="n">phi_f</span> <span class="o">&gt;=</span> <span class="n">single_porosity</span><span class="p">:</span>
+        <span class="n">phi_f</span> <span class="o">=</span> <span class="n">single_porosity</span> <span class="o">*</span> <span class="mf">0.5</span>
+    <span class="n">phi_m</span> <span class="o">=</span> <span class="n">single_porosity</span> <span class="o">-</span> <span class="n">phi_f</span>
+
+    <span class="c1"># Fracture permeability — cubic law (with 1/12 factor)</span>
+    <span class="n">k_f</span> <span class="o">=</span> <span class="p">(</span><span class="n">aperture</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="n">fracture_intensity</span> <span class="o">/</span> <span class="mf">12.0</span>
+    <span class="c1"># Matrix permeability — residual</span>
+    <span class="c1"># Using weighted harmonic mean relation: 1/k_bulk = (1-phi_f)/k_m + phi_f/k_f</span>
+    <span class="c1"># Solve for k_m</span>
+    <span class="n">inv_km</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">single_permeability</span> <span class="o">-</span> <span class="n">phi_f</span> <span class="o">/</span> <span class="n">k_f</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">phi_f</span><span class="p">)</span>
+    <span class="n">k_m</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">inv_km</span> <span class="k">if</span> <span class="n">inv_km</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">1e-18</span>  <span class="c1"># fallback</span>
+
+    <span class="k">return</span> <span class="n">DualPorosityParams</span><span class="p">(</span>
+        <span class="n">phi_m</span><span class="o">=</span><span class="n">phi_m</span><span class="p">,</span>
+        <span class="n">phi_f</span><span class="o">=</span><span class="n">phi_f</span><span class="p">,</span>
+        <span class="n">k_m</span><span class="o">=</span><span class="n">k_m</span><span class="p">,</span>
+        <span class="n">k_f</span><span class="o">=</span><span class="n">k_f</span><span class="p">,</span>
+        <span class="n">Lx</span><span class="o">=</span><span class="n">matrix_block_size</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">Ly</span><span class="o">=</span><span class="n">matrix_block_size</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">Lz</span><span class="o">=</span><span class="n">matrix_block_size</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">convert_dual_to_single</span><span class="p">(</span>
+    <span class="n">phi_m</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">phi_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">k_m</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">k_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Upscaling dual-porosity properties to an equivalent single-porosity</span>
+<span class="sd">    continuum using arithmetic averaging for porosity and a harmonic average</span>
+<span class="sd">    weighted by ``(1 − phi_f, phi_f)`` for permeability.</span>
+
+<span class="sd">    The permeability weights are chosen to make this routine the inverse of</span>
+<span class="sd">    :func:`convert_single_to_dual`, which uses</span>
+<span class="sd">    ``1 / k_bulk = (1 − phi_f) / k_m + phi_f / k_f``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (single_porosity, single_permeability) : tuple[float, float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phi_bulk</span> <span class="o">=</span> <span class="n">phi_m</span> <span class="o">+</span> <span class="n">phi_f</span>
+    <span class="c1"># Inverse of convert_single_to_dual&#39;s harmonic-mean rearrangement:</span>
+    <span class="c1">#   1/k_bulk = (1 - phi_f)/k_m + phi_f/k_f</span>
+    <span class="n">w_f</span> <span class="o">=</span> <span class="n">phi_f</span>
+    <span class="n">w_m</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">phi_f</span>
+    <span class="n">k_bulk</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">w_m</span> <span class="o">/</span> <span class="p">(</span><span class="n">k_m</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">)</span> <span class="o">+</span> <span class="n">w_f</span> <span class="o">/</span> <span class="p">(</span><span class="n">k_f</span> <span class="o">+</span> <span class="mf">1e-30</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">phi_bulk</span><span class="p">,</span> <span class="n">k_bulk</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

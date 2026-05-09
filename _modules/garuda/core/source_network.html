@@ -1,0 +1,849 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.core.source_network &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.core.source_network</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.core.source_network</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Source network module for GARUDA.</span>
+
+<span class="sd">Manages reservoir source/sink terms, well groups, surface separators,</span>
+<span class="sd">and reinjection networks for coupled geothermal and petroleum simulation.</span>
+
+<span class="sd">Design</span>
+<span class="sd">------</span>
+<span class="sd">* ``SourceNode``    – point source/sink attached to a grid cell.</span>
+<span class="sd">* ``Separator``     – surface facility that splits produced fluids into phases.</span>
+<span class="sd">* ``Reinjector``    – injection well fed by a separator stream.</span>
+<span class="sd">* ``SourceGroup``   – collection of ``SourceNode`` objects with group-level constraints.</span>
+<span class="sd">* ``SourceNetwork`` – top-level container that wires groups, separators, and reinjectors</span>
+<span class="sd">together and computes net source terms for the reservoir simulator.</span>
+
+<span class="sd">The module is written to match the style of ``garuda.physics.well_models`` so that</span>
+<span class="sd">a ``WellManager`` can be synchronised into a ``SourceNetwork`` seamlessly.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Import existing well infrastructure for interoperability</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">garuda.physics.well_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">WellManager</span>
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># SourceNode</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="SourceNode">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNode">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SourceNode</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A point source or sink term in the reservoir grid.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Unique identifier.</span>
+<span class="sd">    cell_index : int</span>
+<span class="sd">        Grid cell where the source/sink is applied.</span>
+<span class="sd">    rate : float</span>
+<span class="sd">        Mass flow rate [kg/s].  Positive = injection, negative = production.</span>
+<span class="sd">    phase : str</span>
+<span class="sd">        Dominant fluid phase: ``&#39;water&#39;``, ``&#39;steam&#39;``, ``&#39;oil&#39;``, ``&#39;gas&#39;``,</span>
+<span class="sd">        or ``&#39;total&#39;``.</span>
+<span class="sd">    enthalpy : float or None</span>
+<span class="sd">        Specific enthalpy [J/kg] of the injected / produced fluid.</span>
+<span class="sd">    active : bool</span>
+<span class="sd">        Whether the source is currently active.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cell_index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">phase</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;total&quot;</span>
+    <span class="n">enthalpy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Separator</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="Separator">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Separator">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Separator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Surface separator that splits produced fluid into output streams.</span>
+
+<span class="sd">    Typically sits between production well groups and surface discharge /</span>
+<span class="sd">    reinjection.  The ``separation_curve`` defines how an incoming mass</span>
+<span class="sd">    flow is partitioned by phase.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Separator identifier.</span>
+<span class="sd">    separation_curve : dict[str, float] or None</span>
+<span class="sd">        Mapping ``{phase: mass_fraction}``.  Fractions are normalised</span>
+<span class="sd">        internally so they need not sum to 1.0.  If *None* the separator</span>
+<span class="sd">        acts as a pass-through.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    incoming_rate : float</span>
+<span class="sd">        Last mass rate entering the separator [kg/s].</span>
+<span class="sd">    outgoing_rates : dict[str, float]</span>
+<span class="sd">        Mass rate per output stream [kg/s] after the last ``separate()`` call.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Separator.__init__">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Separator.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">separation_curve</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">separation_curve</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">separation_curve</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incoming_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Separator.separate">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Separator.separate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">separate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">incoming_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">incoming_enthalpy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Split incoming mass flow into output phases.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        incoming_rate : float</span>
+<span class="sd">            Total mass flow entering the separator [kg/s].</span>
+<span class="sd">        incoming_enthalpy : float, optional</span>
+<span class="sd">            Enthalpy of the incoming stream [J/kg] (stored for later</span>
+<span class="sd">            inspection but not used in the default partition).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        outgoing : dict[str, float]</span>
+<span class="sd">            Mass flow per phase / stream [kg/s].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">incoming_rate</span> <span class="o">=</span> <span class="n">incoming_rate</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">separation_curve</span> <span class="ow">or</span> <span class="n">incoming_rate</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">incoming_rate</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span>
+
+        <span class="n">total_fraction</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">separation_curve</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">total_fraction</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="p">:</span> <span class="n">incoming_rate</span><span class="p">}</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">phase</span><span class="p">:</span> <span class="n">incoming_rate</span> <span class="o">*</span> <span class="p">(</span><span class="n">fraction</span> <span class="o">/</span> <span class="n">total_fraction</span><span class="p">)</span> <span class="k">for</span> <span class="n">phase</span><span class="p">,</span> <span class="n">fraction</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">separation_curve</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span></div>
+
+
+<div class="viewcode-block" id="Separator.get_stream">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Separator.get_stream">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_stream</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phase</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the mass rate of a named output stream.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        phase : str</span>
+<span class="sd">            Name of the output stream (e.g. ``&#39;water&#39;``).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rate : float</span>
+<span class="sd">            Mass flow rate [kg/s].  Zero if the stream does not exist.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">outgoing_rates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">phase</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Reinjector</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="Reinjector">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Reinjector">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Reinjector</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reinjection well that takes a separator stream and injects into the grid.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Reinjector identifier.</span>
+<span class="sd">    cell_index : int</span>
+<span class="sd">        Grid cell for injection.</span>
+<span class="sd">    target_rate : float</span>
+<span class="sd">        Desired injection rate [kg/s] (positive = injection).</span>
+<span class="sd">    inlet_stream : str</span>
+<span class="sd">        Name of the separator output stream that feeds this reinjector.</span>
+<span class="sd">    injection_temperature : float</span>
+<span class="sd">        Temperature of the injected fluid [K].</span>
+<span class="sd">    active : bool</span>
+<span class="sd">        Whether the reinjector is currently active.</span>
+<span class="sd">    current_rate : float</span>
+<span class="sd">        Actual injection rate after constraints [kg/s].</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Reinjector.__init__">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Reinjector.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cell_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">target_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">inlet_stream</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">injection_temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">298.15</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_index</span> <span class="o">=</span> <span class="n">cell_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_rate</span> <span class="o">=</span> <span class="n">target_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inlet_stream</span> <span class="o">=</span> <span class="n">inlet_stream</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">injection_temperature</span> <span class="o">=</span> <span class="n">injection_temperature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_rate</span> <span class="o">=</span> <span class="mf">0.0</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="Reinjector.compute_rate">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Reinjector.compute_rate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">available_mass</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine the actual injection rate given available mass.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        available_mass : float</span>
+<span class="sd">            Mass available from upstream [kg/s].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rate : float</span>
+<span class="sd">            Actual injection rate [kg/s].  Cannot exceed *available_mass*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_rate</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="n">rate</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_rate</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">available_mass</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_rate</span> <span class="o">=</span> <span class="n">rate</span>
+        <span class="k">return</span> <span class="n">rate</span></div>
+
+
+<div class="viewcode-block" id="Reinjector.injection_enthalpy">
+<a class="viewcode-back" href="../../../garuda.html#garuda.Reinjector.injection_enthalpy">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">injection_enthalpy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Approximate enthalpy of cold-water injection.</span>
+
+<span class="sd">        Uses a simple correlation for liquid water:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">            h \\approx c_p \\cdot (T_{inj} - 273.15)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        h : float</span>
+<span class="sd">            Specific enthalpy [J/kg].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cp_water</span> <span class="o">=</span> <span class="mf">4182.0</span>  <span class="c1"># J/(kg·K)</span>
+        <span class="k">return</span> <span class="n">cp_water</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injection_temperature</span> <span class="o">-</span> <span class="mf">273.15</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># SourceGroup</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="SourceGroup">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SourceGroup</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Collection of ``SourceNode`` objects with group-level constraints.</span>
+
+<span class="sd">    A group is the natural unit for surface / gathering-network control:</span>
+<span class="sd">    e.g. &quot;all production wells in the eastern sector&quot; or &quot;all reinjectors&quot;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Group identifier.</span>
+<span class="sd">    group_rate_target : float or None</span>
+<span class="sd">        Target total mass rate for the group [kg/s].</span>
+<span class="sd">        Positive = injection target, negative = production target.</span>
+<span class="sd">    min_bhp : float</span>
+<span class="sd">        Minimum bottomhole pressure constraint [Pa] (for producers).</span>
+<span class="sd">    max_bhp : float</span>
+<span class="sd">        Maximum bottomhole pressure constraint [Pa] (for injectors).</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SourceGroup.__init__">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">group_rate_target</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">min_bhp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e6</span><span class="p">,</span>
+        <span class="n">max_bhp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">300e6</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SourceNode</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_rate_target</span> <span class="o">=</span> <span class="n">group_rate_target</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_bhp</span> <span class="o">=</span> <span class="n">min_bhp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_bhp</span> <span class="o">=</span> <span class="n">max_bhp</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="SourceGroup.add_node">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.add_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">SourceNode</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a ``SourceNode`` to the group.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">node</span></div>
+
+
+<div class="viewcode-block" id="SourceGroup.remove_node">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.remove_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a ``SourceNode`` by name.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SourceGroup.get_node">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.get_node">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_node</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SourceNode</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve a node by name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SourceGroup.compute_group_rate">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.compute_group_rate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_group_rate</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sum of current rates across active nodes.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        q_total : float</span>
+<span class="sd">            Total mass rate [kg/s].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">rate</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">active</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SourceGroup.allocate_rates">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.allocate_rates">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">allocate_rates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_total</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;uniform&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Distribute a target total rate among active group members.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        target_total : float</span>
+<span class="sd">            Total rate to allocate [kg/s].</span>
+<span class="sd">        method : {&#39;uniform&#39;, &#39;proportional&#39;}</span>
+<span class="sd">            - ``&#39;uniform&#39;``      – split evenly among active nodes.</span>
+<span class="sd">            - ``&#39;proportional&#39;`` – scale existing rates proportionally.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If ``method`` is unknown.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;uniform&quot;</span><span class="p">,</span> <span class="s2">&quot;proportional&quot;</span><span class="p">}:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown allocation method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">active_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">active</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">active_nodes</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;uniform&quot;</span><span class="p">:</span>
+            <span class="n">per_node</span> <span class="o">=</span> <span class="n">target_total</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_nodes</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">active_nodes</span><span class="p">:</span>
+                <span class="n">node</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="n">per_node</span>
+        <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;proportional&quot;</span><span class="p">:</span>
+            <span class="n">current_sum</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">rate</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">active_nodes</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_sum</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">per_node</span> <span class="o">=</span> <span class="n">target_total</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">active_nodes</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">active_nodes</span><span class="p">:</span>
+                    <span class="n">node</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="n">per_node</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">scale</span> <span class="o">=</span> <span class="n">target_total</span> <span class="o">/</span> <span class="n">current_sum</span>
+                <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">active_nodes</span><span class="p">:</span>
+                    <span class="n">node</span><span class="o">.</span><span class="n">rate</span> <span class="o">*=</span> <span class="n">scale</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown allocation method: </span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SourceGroup.get_source_terms">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.get_source_terms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_source_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_cells</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build source/sink array for the entire group.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_cells : int</span>
+<span class="sd">            Number of grid cells.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        q : ndarray</span>
+<span class="sd">            Mass rate per cell [kg/s].  Length = *num_cells*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_cells</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">node</span><span class="o">.</span><span class="n">cell_index</span> <span class="o">&lt;</span> <span class="n">num_cells</span><span class="p">:</span>
+                <span class="n">q</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">cell_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">rate</span>
+        <span class="k">return</span> <span class="n">q</span></div>
+
+
+<div class="viewcode-block" id="SourceGroup.get_enthalpy_terms">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceGroup.get_enthalpy_terms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_enthalpy_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_cells</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build enthalpy-weighted source term.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_cells : int</span>
+<span class="sd">            Number of grid cells.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        h_dot : ndarray</span>
+<span class="sd">            Enthalpy flux per cell [W].  Length = *num_cells*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_cells</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">node</span><span class="o">.</span><span class="n">active</span> <span class="ow">or</span> <span class="n">node</span><span class="o">.</span><span class="n">enthalpy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">node</span><span class="o">.</span><span class="n">cell_index</span> <span class="o">&lt;</span> <span class="n">num_cells</span><span class="p">:</span>
+                <span class="n">h</span><span class="p">[</span><span class="n">node</span><span class="o">.</span><span class="n">cell_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">node</span><span class="o">.</span><span class="n">rate</span> <span class="o">*</span> <span class="n">node</span><span class="o">.</span><span class="n">enthalpy</span>
+        <span class="k">return</span> <span class="n">h</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;SourceGroup(name=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">!r}</span><span class="s2">, nodes=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span><span class="si">}</span><span class="s2">, rate=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_group_rate</span><span class="p">()</span><span class="si">:</span><span class="s2">.3e</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># SourceNetwork</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="SourceNetwork">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SourceNetwork</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Top-level reservoir source network.</span>
+
+<span class="sd">    Manages ``SourceGroup``, ``Separator``, and ``Reinjector`` instances,</span>
+<span class="sd">    wires them together via connections, and computes net source/sink</span>
+<span class="sd">    terms for the grid solver.</span>
+
+<span class="sd">    Connections are stored as 5-tuples::</span>
+
+<span class="sd">        (upstream_type, upstream_name, downstream_type, downstream_name, stream_phase)</span>
+
+<span class="sd">    where ``upstream_type`` is ``&#39;group&#39;`` or ``&#39;separator&#39;``, and</span>
+<span class="sd">    ``downstream_type`` is ``&#39;separator&#39;``, ``&#39;reinjector&#39;``, or ``&#39;group&#39;``.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SourceNetwork.__init__">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SourceGroup</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Separator</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reinjectors</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Reinjector</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connections</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="SourceNetwork.add_group">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.add_group">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">group</span><span class="p">:</span> <span class="n">SourceGroup</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a ``SourceGroup``.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="n">group</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">group</span></div>
+
+
+<div class="viewcode-block" id="SourceNetwork.add_separator">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.add_separator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">separator</span><span class="p">:</span> <span class="n">Separator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a ``Separator``.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="p">[</span><span class="n">separator</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">separator</span></div>
+
+
+<div class="viewcode-block" id="SourceNetwork.add_reinjector">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.add_reinjector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_reinjector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reinjector</span><span class="p">:</span> <span class="n">Reinjector</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register a ``Reinjector``.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reinjectors</span><span class="p">[</span><span class="n">reinjector</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">reinjector</span></div>
+
+
+<div class="viewcode-block" id="SourceNetwork.connect">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.connect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">upstream_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">upstream_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">downstream_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">downstream_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">stream_phase</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;total&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a directional connection in the network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        upstream_type : {&#39;group&#39;, &#39;separator&#39;}</span>
+<span class="sd">            Type of the upstream entity.</span>
+<span class="sd">        upstream_name : str</span>
+<span class="sd">            Name of the upstream entity.</span>
+<span class="sd">        downstream_type : {&#39;separator&#39;, &#39;reinjector&#39;, &#39;group&#39;}</span>
+<span class="sd">            Type of the downstream entity.</span>
+<span class="sd">        downstream_name : str</span>
+<span class="sd">            Name of the downstream entity.</span>
+<span class="sd">        stream_phase : str</span>
+<span class="sd">            Which phase/stream to transfer (e.g. ``&#39;water&#39;``,</span>
+<span class="sd">            ``&#39;steam&#39;``, ``&#39;total&#39;``).</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        ValueError</span>
+<span class="sd">            If an invalid type string is supplied.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">valid_upstream</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;group&quot;</span><span class="p">,</span> <span class="s2">&quot;separator&quot;</span><span class="p">}</span>
+        <span class="n">valid_downstream</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;separator&quot;</span><span class="p">,</span> <span class="s2">&quot;reinjector&quot;</span><span class="p">,</span> <span class="s2">&quot;group&quot;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">upstream_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_upstream</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;upstream_type must be one of </span><span class="si">{</span><span class="n">valid_upstream</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">upstream_type</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">downstream_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_downstream</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;downstream_type must be one of </span><span class="si">{</span><span class="n">valid_downstream</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">downstream_type</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connections</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">upstream_type</span><span class="p">,</span> <span class="n">upstream_name</span><span class="p">,</span> <span class="n">downstream_type</span><span class="p">,</span> <span class="n">downstream_name</span><span class="p">,</span> <span class="n">stream_phase</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="SourceNetwork.remove_connection">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.remove_connection">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">upstream_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">downstream_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove all connections between two named entities.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connections</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connections</span> <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">upstream_name</span> <span class="ow">and</span> <span class="n">c</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="n">downstream_name</span><span class="p">)]</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="SourceNetwork.get_group">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.get_group">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SourceGroup</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve a group by name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SourceNetwork.get_separator">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.get_separator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_separator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Separator</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve a separator by name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SourceNetwork.get_reinjector">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.get_reinjector">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_reinjector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Reinjector</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve a reinjector by name.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reinjectors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="SourceNetwork.compute_source_terms">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.compute_source_terms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_source_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_cells</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute net source/sink terms from the whole network.</span>
+
+<span class="sd">        The evaluation order is:</span>
+
+<span class="sd">        1. Direct contributions from all ``SourceGroup`` (production +</span>
+<span class="sd">           direct injection).</span>
+<span class="sd">        2. Upstream mass flows into ``Separator`` instances.</span>
+<span class="sd">        3. ``Reinjector`` objects drawing from separator streams and adding</span>
+<span class="sd">           back to the grid.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        num_cells : int</span>
+<span class="sd">            Number of grid cells.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        terms : dict</span>
+<span class="sd">            Dictionary with keys ``&#39;mass&#39;`` [kg/s] and ``&#39;enthalpy&#39;`` [W],</span>
+<span class="sd">            each an ``ndarray`` of length *num_cells*.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mass</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_cells</span><span class="p">)</span>
+        <span class="n">enthalpy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_cells</span><span class="p">)</span>
+
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="c1"># Stage 1 – direct contributions from every group</span>
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">mass</span> <span class="o">+=</span> <span class="n">group</span><span class="o">.</span><span class="n">get_source_terms</span><span class="p">(</span><span class="n">num_cells</span><span class="p">)</span>
+            <span class="n">enthalpy</span> <span class="o">+=</span> <span class="n">group</span><span class="o">.</span><span class="n">get_enthalpy_terms</span><span class="p">(</span><span class="n">num_cells</span><span class="p">)</span>
+
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="c1"># Stage 2 – accumulate separator feed rates from upstream connections</span>
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="n">sep_mass_in</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="p">}</span>
+        <span class="n">sep_h_in</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">up_type</span><span class="p">,</span> <span class="n">up_name</span><span class="p">,</span> <span class="n">down_type</span><span class="p">,</span> <span class="n">down_name</span><span class="p">,</span> <span class="n">phase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">up_type</span> <span class="o">==</span> <span class="s2">&quot;group&quot;</span> <span class="ow">and</span> <span class="n">down_type</span> <span class="o">==</span> <span class="s2">&quot;separator&quot;</span><span class="p">:</span>
+                <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">up_name</span><span class="p">)</span>
+                <span class="n">sep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">down_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">group</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">sep</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Production is represented by negative rates</span>
+                <span class="n">group_rate</span> <span class="o">=</span> <span class="n">group</span><span class="o">.</span><span class="n">compute_group_rate</span><span class="p">()</span>
+                <span class="n">prod_rate</span> <span class="o">=</span> <span class="o">-</span><span class="nb">min</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">group_rate</span><span class="p">)</span>  <span class="c1"># absolute production</span>
+                <span class="n">sep_mass_in</span><span class="p">[</span><span class="n">sep</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prod_rate</span>
+
+                <span class="c1"># Approximate average enthalpy from producing nodes</span>
+                <span class="n">producers</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">group</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">active</span> <span class="ow">and</span> <span class="n">n</span><span class="o">.</span><span class="n">rate</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">producers</span><span class="p">:</span>
+                    <span class="n">avg_h</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">n</span><span class="o">.</span><span class="n">enthalpy</span> <span class="ow">or</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">producers</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">producers</span><span class="p">)</span>
+                    <span class="n">sep_h_in</span><span class="p">[</span><span class="n">sep</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="n">prod_rate</span> <span class="o">*</span> <span class="n">avg_h</span>
+
+        <span class="c1"># Run all separators once inputs are known</span>
+        <span class="k">for</span> <span class="n">sep</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">rate_in</span> <span class="o">=</span> <span class="n">sep_mass_in</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sep</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rate_in</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="n">h_in</span> <span class="o">=</span> <span class="n">sep_h_in</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">sep</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+                <span class="n">sep</span><span class="o">.</span><span class="n">separate</span><span class="p">(</span><span class="n">rate_in</span><span class="p">,</span> <span class="n">h_in</span> <span class="o">/</span> <span class="n">rate_in</span> <span class="k">if</span> <span class="n">rate_in</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="c1"># Stage 3 – reinjectors consuming separator output streams</span>
+        <span class="c1"># ------------------------------------------------------------------</span>
+        <span class="k">for</span> <span class="n">up_type</span><span class="p">,</span> <span class="n">up_name</span><span class="p">,</span> <span class="n">down_type</span><span class="p">,</span> <span class="n">down_name</span><span class="p">,</span> <span class="n">phase</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">connections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">up_type</span> <span class="o">==</span> <span class="s2">&quot;separator&quot;</span> <span class="ow">and</span> <span class="n">down_type</span> <span class="o">==</span> <span class="s2">&quot;reinjector&quot;</span><span class="p">:</span>
+                <span class="n">sep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">up_name</span><span class="p">)</span>
+                <span class="n">reinj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reinjectors</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">down_name</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">sep</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">reinj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">stream_rate</span> <span class="o">=</span> <span class="n">sep</span><span class="o">.</span><span class="n">get_stream</span><span class="p">(</span><span class="n">phase</span><span class="p">)</span>
+                <span class="n">reinj_rate</span> <span class="o">=</span> <span class="n">reinj</span><span class="o">.</span><span class="n">compute_rate</span><span class="p">(</span><span class="n">stream_rate</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">reinj_rate</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
+                    <span class="n">mass</span><span class="p">[</span><span class="n">reinj</span><span class="o">.</span><span class="n">cell_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">reinj_rate</span>
+                    <span class="n">enthalpy</span><span class="p">[</span><span class="n">reinj</span><span class="o">.</span><span class="n">cell_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">reinj_rate</span> <span class="o">*</span> <span class="n">reinj</span><span class="o">.</span><span class="n">injection_enthalpy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;mass&quot;</span><span class="p">:</span> <span class="n">mass</span><span class="p">,</span> <span class="s2">&quot;enthalpy&quot;</span><span class="p">:</span> <span class="n">enthalpy</span><span class="p">}</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+<div class="viewcode-block" id="SourceNetwork.update_from_wells">
+<a class="viewcode-back" href="../../../garuda.html#garuda.SourceNetwork.update_from_wells">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_from_wells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">well_manager</span><span class="p">:</span> <span class="n">WellManager</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronise the network with an existing ``WellManager``.</span>
+
+<span class="sd">        Creates a default ``SourceGroup`` named ``&#39;well_group&#39;`` containing</span>
+<span class="sd">        ``SourceNode`` copies of every active well in *well_manager*.</span>
+<span class="sd">        Existing groups are **not** cleared; the new group is simply added.</span>
+
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        ``well.current_rate`` is only populated after the well has been</span>
+<span class="sd">        evaluated (i.e. after ``apply_constraints`` or</span>
+<span class="sd">        ``compute_well_rates``). Calling this method before the first</span>
+<span class="sd">        evaluation copies a rate of 0 for every well — re-call after</span>
+<span class="sd">        evaluating the wells to keep the network in sync.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        well_manager : WellManager</span>
+<span class="sd">            Manager holding ``PeacemanWell`` instances.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">well_manager</span><span class="o">.</span><span class="n">wells</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">default_group</span> <span class="o">=</span> <span class="n">SourceGroup</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;well_group&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">well</span> <span class="ow">in</span> <span class="n">well_manager</span><span class="o">.</span><span class="n">wells</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">node</span> <span class="o">=</span> <span class="n">SourceNode</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">cell_index</span><span class="o">=</span><span class="n">well</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">cell_index</span><span class="p">,</span>
+                <span class="n">rate</span><span class="o">=</span><span class="n">well</span><span class="o">.</span><span class="n">current_rate</span><span class="p">,</span>  <span class="c1"># negative = production in PeacemanWell</span>
+                <span class="n">phase</span><span class="o">=</span><span class="s2">&quot;water&quot;</span><span class="p">,</span>
+                <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">default_group</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">[</span><span class="n">default_group</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_group</span></div>
+
+
+    <span class="c1"># ---------------------------------------------------------------</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;SourceNetwork(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;groups=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;separators=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">separators</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;reinjectors=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reinjectors</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;connections=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">connections</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;)&quot;</span>
+        <span class="p">)</span></div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Public API</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;SourceNode&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Separator&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Reinjector&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SourceGroup&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;SourceNetwork&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

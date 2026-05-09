@@ -1,0 +1,751 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>garuda.physics.well_models &mdash; GARUDA 0.0.post1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=3469de9b"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            GARUDA
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/installation.html">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/installation.html#from-source">From Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-1d-flow">Single-Phase 1D Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../user_guide/quickstart.html#single-phase-2d-flow">Single-Phase 2D Flow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/grid.html">Grid Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/solver.html">TPFA Solver</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/physics.html">Physics Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/thermal.html">Thermal Flow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user_guide/examples.html">Examples</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-1-0">v1.1.0</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../changelog.html#v1-0-0">v1.0.0</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GARUDA</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">garuda.physics.well_models</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for garuda.physics.well_models</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Peaceman Well Models for GARUDA.</span>
+
+<span class="sd">Implements the Peaceman productivity index method for modeling wells</span>
+<span class="sd">in reservoir simulation.</span>
+
+<span class="sd">Reference:</span>
+<span class="sd">    Peaceman, D.W. (1978). &quot;Interpretation of Well-Block Pressures in</span>
+<span class="sd">    Numerical Reservoir Simulation.&quot; SPE Journal, 18(3), 183-194.</span>
+<span class="sd">    DOI: 10.2118/5130-PA</span>
+
+<span class="sd">Features:</span>
+<span class="sd">    - Productivity Index (PI) calculation</span>
+<span class="sd">    - Rate constraints</span>
+<span class="sd">    - Pressure constraints</span>
+<span class="sd">    - Multilateral wells</span>
+<span class="sd">    - Injectivity index for reinjection</span>
+
+<span class="sd">Valid for:</span>
+<span class="sd">    - Vertical wells</span>
+<span class="sd">    - Horizontal wells (extended)</span>
+<span class="sd">    - Deviated wells (with corrections)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+
+<div class="viewcode-block" id="WellParameters">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellParameters">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WellParameters</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Well completion and operating parameters.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Well identifier</span>
+<span class="sd">    cell_index : int</span>
+<span class="sd">        Grid cell index where well is completed</span>
+<span class="sd">    well_radius : float</span>
+<span class="sd">        Wellbore radius [m], typical: 0.1-0.15 m</span>
+<span class="sd">    skin_factor : float</span>
+<span class="sd">        Skin factor (dimensionless), typical: -3 to +10</span>
+<span class="sd">        Negative = stimulated, Positive = damaged</span>
+<span class="sd">    well_depth : float</span>
+<span class="sd">        True vertical depth [m]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cell_index</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">well_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.12</span>  <span class="c1"># ~4.7 inches</span>
+    <span class="n">skin_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">well_depth</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1000.0</span></div>
+
+
+
+<div class="viewcode-block" id="WellOperatingConditions">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellOperatingConditions">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WellOperatingConditions</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Well operating constraints and targets.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    constraint_type : str</span>
+<span class="sd">        &#39;rate&#39; = constant rate, &#39;pressure&#39; = constant BHP</span>
+<span class="sd">    target_value : float</span>
+<span class="sd">        Target rate [kg/s] or BHP [Pa]</span>
+<span class="sd">    min_bhp : float</span>
+<span class="sd">        Minimum bottomhole pressure [Pa] (for producers)</span>
+<span class="sd">    max_bhp : float</span>
+<span class="sd">        Maximum bottomhole pressure [Pa] (for injectors)</span>
+<span class="sd">    max_rate : float</span>
+<span class="sd">        Maximum rate limit [kg/s]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">constraint_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rate&quot;</span>
+    <span class="n">target_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">min_bhp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50e5</span>   <span class="c1"># 50 bar — matches WellManager.add_well default</span>
+    <span class="n">max_bhp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">300e5</span>  <span class="c1"># 300 bar — matches WellManager.add_well default</span>
+    <span class="n">max_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span>  <span class="c1"># kg/s</span></div>
+
+
+
+<div class="viewcode-block" id="PeacemanWell">
+<a class="viewcode-back" href="../../../well_models.html#garuda.PeacemanWell">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PeacemanWell</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Peaceman well model for reservoir simulation.</span>
+
+<span class="sd">    The Peaceman method relates well flow rate to pressure difference</span>
+<span class="sd">    between the wellbore and the grid cell:</span>
+
+<span class="sd">        q = PI * (p_cell - p_wf)</span>
+
+<span class="sd">    where:</span>
+<span class="sd">        q = flow rate [kg/s]</span>
+<span class="sd">        PI = productivity index [kg/(s·Pa)]</span>
+<span class="sd">        p_cell = grid cell pressure [Pa]</span>
+<span class="sd">        p_wf = wellbore flowing pressure [Pa]</span>
+
+<span class="sd">    The productivity index accounts for:</span>
+<span class="sd">        - Permeability</span>
+<span class="sd">        - Well geometry</span>
+<span class="sd">        - Fluid properties</span>
+<span class="sd">        - Skin factor</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; well = PeacemanWell(params, operating)</span>
+<span class="sd">    &gt;&gt;&gt; PI = well.compute_productivity_index(k, mu, rho)</span>
+<span class="sd">    &gt;&gt;&gt; q = well.compute_rate(p_cell, p_wf)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PeacemanWell.__init__">
+<a class="viewcode-back" href="../../../well_models.html#garuda.PeacemanWell.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">params</span><span class="p">:</span> <span class="n">WellParameters</span><span class="p">,</span>
+        <span class="n">operating</span><span class="p">:</span> <span class="n">WellOperatingConditions</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operating</span> <span class="o">=</span> <span class="n">operating</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">productivity_index</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_rate</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_bhp</span> <span class="o">=</span> <span class="mf">0.0</span></div>
+
+
+<div class="viewcode-block" id="PeacemanWell.compute_effective_radius">
+<a class="viewcode-back" href="../../../well_models.html#garuda.PeacemanWell.compute_effective_radius">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_effective_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">dy</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">kx</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">ky</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute Peaceman effective wellblock radius.</span>
+
+<span class="sd">        For a vertical well in a rectangular grid cell:</span>
+
+<span class="sd">            r_0 = 0.28 * sqrt((k_y/k_x)^(1/2) * dx^2 + (k_x/k_y)^(1/2) * dy^2) /</span>
+<span class="sd">                  ((k_y/k_x)^(1/4) + (k_x/k_y)^(1/4))</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dx, dy : float</span>
+<span class="sd">            Grid cell dimensions [m]</span>
+<span class="sd">        kx, ky : float</span>
+<span class="sd">            Permeabilities in x and y directions [m²]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        r_0 : float</span>
+<span class="sd">            Effective wellblock radius [m]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Permeability ratio</span>
+        <span class="k">if</span> <span class="n">kx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">ky</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">k_ratio</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">ky</span> <span class="o">/</span> <span class="n">kx</span><span class="p">)</span>
+
+            <span class="n">numerator</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">k_ratio</span> <span class="o">*</span> <span class="n">dx</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">k_ratio</span><span class="p">)</span> <span class="o">*</span> <span class="n">dy</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">denominator</span> <span class="o">=</span> <span class="n">k_ratio</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">k_ratio</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+
+            <span class="n">r_0</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="mf">0.28</span> <span class="o">*</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Fallback for zero permeability</span>
+            <span class="n">r_0</span> <span class="o">=</span> <span class="mf">0.2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">dx</span> <span class="o">*</span> <span class="n">dy</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">r_0</span></div>
+
+
+<div class="viewcode-block" id="PeacemanWell.compute_productivity_index">
+<a class="viewcode-back" href="../../../well_models.html#garuda.PeacemanWell.compute_productivity_index">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_productivity_index</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">permeability</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">formation_volume_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="n">dx</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">dy</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">dz</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute productivity index (PI).</span>
+
+<span class="sd">        For a vertical well:</span>
+
+<span class="sd">            PI = (2 * pi * k * h) / (mu * B * (ln(r_0/r_w) + S))</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        permeability : float</span>
+<span class="sd">            Cell permeability [m²]</span>
+<span class="sd">        viscosity : float</span>
+<span class="sd">            Fluid viscosity [Pa·s]</span>
+<span class="sd">        formation_volume_factor : float</span>
+<span class="sd">            Formation volume factor (dimensionless), typically ~1.0 for water</span>
+<span class="sd">        dx, dy, dz : float</span>
+<span class="sd">            Grid cell dimensions [m]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        PI : float</span>
+<span class="sd">            Productivity index [kg/(s·Pa)]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Effective wellblock radius</span>
+        <span class="n">r_0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_effective_radius</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">permeability</span><span class="p">,</span> <span class="n">permeability</span><span class="p">)</span>
+
+        <span class="c1"># Wellbore radius</span>
+        <span class="n">r_w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">well_radius</span>
+
+        <span class="c1"># Net pay thickness (use dz for single layer completion)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">dz</span>
+
+        <span class="c1"># Peaceman equation</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">viscosity</span> <span class="o">*</span> <span class="n">formation_volume_factor</span> <span class="o">*</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">r_0</span> <span class="o">/</span> <span class="n">r_w</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">skin_factor</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">denominator</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid denominator in PI calculation for well </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">PI</span> <span class="o">=</span> <span class="mf">1e-10</span>  <span class="c1"># Very small but non-zero</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">PI</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">permeability</span> <span class="o">*</span> <span class="n">h</span><span class="p">)</span> <span class="o">/</span> <span class="n">denominator</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">productivity_index</span> <span class="o">=</span> <span class="n">PI</span>
+
+        <span class="k">return</span> <span class="n">PI</span></div>
+
+
+<div class="viewcode-block" id="PeacemanWell.compute_rate">
+<a class="viewcode-back" href="../../../well_models.html#garuda.PeacemanWell.compute_rate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_rate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cell_pressure</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">wellbore_pressure</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">density</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">depth_difference</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute well flow rate from pressure difference.</span>
+
+<span class="sd">        q = PI * (p_cell - p_wf + rho * g * dz)</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cell_pressure : float</span>
+<span class="sd">            Grid cell pressure [Pa]</span>
+<span class="sd">        wellbore_pressure : float</span>
+<span class="sd">            Wellbore flowing pressure [Pa]</span>
+<span class="sd">        density : float</span>
+<span class="sd">            Fluid density [kg/m³]</span>
+<span class="sd">        depth_difference : float</span>
+<span class="sd">            Depth difference for gravity correction [m]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        q : float</span>
+<span class="sd">            Flow rate [kg/s] (negative = production, positive = injection).</span>
+<span class="sd">            Producer drawdown (p_wf &lt; p_cell) yields q &lt; 0 (mass leaves the cell);</span>
+<span class="sd">            injector overpressure (p_wf &gt; p_cell) yields q &gt; 0 (mass enters the cell).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">productivity_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Productivity index not computed. Call compute_productivity_index() first.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Gravity correction (hydrostatic head between cell and wellbore datum)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="mf">9.81</span>
+        <span class="n">hydrostatic</span> <span class="o">=</span> <span class="n">density</span> <span class="o">*</span> <span class="n">g</span> <span class="o">*</span> <span class="n">depth_difference</span>
+
+        <span class="c1"># Driving pressure (positive =&gt; fluid flows INTO the cell from the well)</span>
+        <span class="n">dp</span> <span class="o">=</span> <span class="n">wellbore_pressure</span> <span class="o">-</span> <span class="n">cell_pressure</span> <span class="o">-</span> <span class="n">hydrostatic</span>
+
+        <span class="c1"># Flow rate (multiply by density to get mass flow)</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">productivity_index</span> <span class="o">*</span> <span class="n">dp</span> <span class="o">*</span> <span class="n">density</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_rate</span> <span class="o">=</span> <span class="n">q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_bhp</span> <span class="o">=</span> <span class="n">wellbore_pressure</span>
+
+        <span class="k">return</span> <span class="n">q</span></div>
+
+
+<div class="viewcode-block" id="PeacemanWell.apply_constraints">
+<a class="viewcode-back" href="../../../well_models.html#garuda.PeacemanWell.apply_constraints">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">apply_constraints</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">cell_pressure</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">density</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply operating constraints to determine actual rate and BHP.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        rate : float</span>
+<span class="sd">            Actual flow rate [kg/s]</span>
+<span class="sd">        bhp : float</span>
+<span class="sd">            Actual bottomhole pressure [Pa]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">constraint_type</span> <span class="o">==</span> <span class="s2">&quot;rate&quot;</span><span class="p">:</span>
+            <span class="c1"># Constant rate constraint. target_value sign convention:</span>
+            <span class="c1">#   negative = producer (mass leaves cell), positive = injector.</span>
+            <span class="n">rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copysign</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">target_value</span><span class="p">)</span> <span class="o">*</span> <span class="nb">min</span><span class="p">(</span>
+                <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">target_value</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">max_rate</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Required BHP from rate = PI * (bhp - p_cell) * rho:</span>
+            <span class="c1">#   bhp = p_cell + rate / (PI * rho)</span>
+            <span class="n">pi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">productivity_index</span>
+            <span class="k">assert</span> <span class="n">pi</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-15</span> <span class="ow">and</span> <span class="n">density</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">bhp</span> <span class="o">=</span> <span class="n">cell_pressure</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">/</span> <span class="p">(</span><span class="n">pi</span> <span class="o">*</span> <span class="n">density</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">bhp</span> <span class="o">=</span> <span class="n">cell_pressure</span>
+
+            <span class="c1"># Check BHP limits</span>
+            <span class="k">if</span> <span class="n">rate</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Producer (negative rate = extraction): enforce min_bhp</span>
+                <span class="k">if</span> <span class="n">bhp</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">min_bhp</span><span class="p">:</span>
+                    <span class="n">bhp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">min_bhp</span>
+                    <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_rate</span><span class="p">(</span><span class="n">cell_pressure</span><span class="p">,</span> <span class="n">bhp</span><span class="p">,</span> <span class="n">density</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># Injector (positive rate = injection): enforce max_bhp</span>
+                <span class="k">if</span> <span class="n">bhp</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">max_bhp</span><span class="p">:</span>
+                    <span class="n">bhp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">max_bhp</span>
+                    <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_rate</span><span class="p">(</span><span class="n">cell_pressure</span><span class="p">,</span> <span class="n">bhp</span><span class="p">,</span> <span class="n">density</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">constraint_type</span> <span class="o">==</span> <span class="s2">&quot;pressure&quot;</span><span class="p">:</span>
+            <span class="c1"># Constant BHP constraint</span>
+            <span class="n">bhp</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">target_value</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">min_bhp</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">max_bhp</span><span class="p">)</span>
+
+            <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_rate</span><span class="p">(</span><span class="n">cell_pressure</span><span class="p">,</span> <span class="n">bhp</span><span class="p">,</span> <span class="n">density</span><span class="p">)</span>
+
+            <span class="c1"># Check rate limit</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">rate</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">max_rate</span><span class="p">:</span>
+                <span class="n">rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copysign</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">max_rate</span><span class="p">,</span> <span class="n">rate</span><span class="p">)</span>
+                <span class="n">pi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">productivity_index</span>
+                <span class="k">assert</span> <span class="n">pi</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">pi</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-15</span> <span class="ow">and</span> <span class="n">density</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">bhp</span> <span class="o">=</span> <span class="n">cell_pressure</span> <span class="o">+</span> <span class="n">rate</span> <span class="o">/</span> <span class="p">(</span><span class="n">pi</span> <span class="o">*</span> <span class="n">density</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown constraint type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">constraint_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">rate</span><span class="p">,</span> <span class="n">bhp</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WellManager">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellManager">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WellManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manager for multiple wells in reservoir simulation.</span>
+
+<span class="sd">    Handles:</span>
+<span class="sd">        - Well creation and removal</span>
+<span class="sd">        - Rate allocation</span>
+<span class="sd">        - Group control</span>
+<span class="sd">        - Scheduling</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; manager = WellManager()</span>
+<span class="sd">    &gt;&gt;&gt; manager.add_well(&#39;PROD1&#39;, cell_idx=50, rate=-50)  # Producer</span>
+<span class="sd">    &gt;&gt;&gt; manager.add_well(&#39;INJ1&#39;, cell_idx=100, rate=40)   # Injector</span>
+<span class="sd">    &gt;&gt;&gt; rates = manager.compute_well_rates(grid, pressure, fluid_props)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="WellManager.__init__">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellManager.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PeacemanWell</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">well_groups</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="WellManager.add_well">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellManager.add_well">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_well</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">cell_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">well_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;producer&quot;</span><span class="p">,</span>
+        <span class="n">target_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">target_bhp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">well_radius</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.12</span><span class="p">,</span>
+        <span class="n">skin_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">max_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">100.0</span><span class="p">,</span>
+        <span class="n">min_bhp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50e5</span><span class="p">,</span>
+        <span class="n">max_bhp</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">300e5</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a new well to the manager.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        name : str</span>
+<span class="sd">            Well name/identifier</span>
+<span class="sd">        cell_index : int</span>
+<span class="sd">            Grid cell index</span>
+<span class="sd">        well_type : str</span>
+<span class="sd">            &#39;producer&#39; or &#39;injector&#39;</span>
+<span class="sd">        target_rate : float</span>
+<span class="sd">            Target rate [kg/s] (negative for production)</span>
+<span class="sd">        target_bhp : float</span>
+<span class="sd">            Target BHP [Pa] (optional)</span>
+<span class="sd">        well_radius : float</span>
+<span class="sd">            Wellbore radius [m]</span>
+<span class="sd">        skin_factor : float</span>
+<span class="sd">            Skin factor</span>
+<span class="sd">        max_rate : float</span>
+<span class="sd">            Maximum rate [kg/s]</span>
+<span class="sd">        min_bhp : float</span>
+<span class="sd">            Minimum BHP [Pa]</span>
+<span class="sd">        max_bhp : float</span>
+<span class="sd">            Maximum BHP [Pa]</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Create well parameters</span>
+        <span class="n">params</span> <span class="o">=</span> <span class="n">WellParameters</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">cell_index</span><span class="o">=</span><span class="n">cell_index</span><span class="p">,</span>
+            <span class="n">well_radius</span><span class="o">=</span><span class="n">well_radius</span><span class="p">,</span>
+            <span class="n">skin_factor</span><span class="o">=</span><span class="n">skin_factor</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Determine constraint type</span>
+        <span class="k">if</span> <span class="n">target_bhp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">constraint_type</span> <span class="o">=</span> <span class="s2">&quot;pressure&quot;</span>
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">target_bhp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">constraint_type</span> <span class="o">=</span> <span class="s2">&quot;rate&quot;</span>
+            <span class="n">target_value</span> <span class="o">=</span> <span class="n">target_rate</span>
+
+        <span class="c1"># Sign convention applies to rate targets only (BHP is an absolute</span>
+        <span class="c1"># pressure and must stay positive). negative rate = production.</span>
+        <span class="k">if</span> <span class="n">constraint_type</span> <span class="o">==</span> <span class="s2">&quot;rate&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">well_type</span> <span class="o">==</span> <span class="s2">&quot;producer&quot;</span> <span class="ow">and</span> <span class="n">target_value</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">target_value</span> <span class="o">=</span> <span class="o">-</span><span class="n">target_value</span>
+            <span class="k">elif</span> <span class="n">well_type</span> <span class="o">==</span> <span class="s2">&quot;injector&quot;</span> <span class="ow">and</span> <span class="n">target_value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">target_value</span> <span class="o">=</span> <span class="o">-</span><span class="n">target_value</span>
+
+        <span class="c1"># Create operating conditions</span>
+        <span class="n">operating</span> <span class="o">=</span> <span class="n">WellOperatingConditions</span><span class="p">(</span>
+            <span class="n">constraint_type</span><span class="o">=</span><span class="n">constraint_type</span><span class="p">,</span>
+            <span class="n">target_value</span><span class="o">=</span><span class="n">target_value</span><span class="p">,</span>
+            <span class="n">min_bhp</span><span class="o">=</span><span class="n">min_bhp</span><span class="p">,</span>
+            <span class="n">max_bhp</span><span class="o">=</span><span class="n">max_bhp</span><span class="p">,</span>
+            <span class="n">max_rate</span><span class="o">=</span><span class="n">max_rate</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Create well</span>
+        <span class="n">well</span> <span class="o">=</span> <span class="n">PeacemanWell</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">operating</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">well</span>
+
+        <span class="k">return</span> <span class="n">well</span></div>
+
+
+<div class="viewcode-block" id="WellManager.remove_well">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellManager.remove_well">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_well</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove a well from the manager.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="p">[</span><span class="n">name</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="WellManager.compute_well_rates">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellManager.compute_well_rates">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_well_rates</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">grid</span><span class="p">,</span>
+        <span class="n">pressure</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+        <span class="n">density</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">viscosity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute source terms from all wells.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        grid : Grid</span>
+<span class="sd">            Reservoir grid</span>
+<span class="sd">        pressure : ndarray</span>
+<span class="sd">            Cell pressures [Pa]</span>
+<span class="sd">        density : float</span>
+<span class="sd">            Fluid density [kg/m³]</span>
+<span class="sd">        viscosity : float</span>
+<span class="sd">            Fluid viscosity [Pa·s]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        source_terms : ndarray</span>
+<span class="sd">            Well source/sink terms [kg/s] for each cell</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">source_terms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">num_cells</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">well_name</span><span class="p">,</span> <span class="n">well</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">cell_idx</span> <span class="o">=</span> <span class="n">well</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">cell_index</span>
+
+            <span class="c1"># Get cell properties</span>
+            <span class="n">cell_pressure</span> <span class="o">=</span> <span class="n">pressure</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span>
+
+            <span class="c1"># Get cell dimensions</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;dx&quot;</span><span class="p">):</span>
+                <span class="n">_dx</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">dx</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_dx</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">_dx</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">_dx</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dx</span> <span class="o">=</span> <span class="mf">100.0</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;dy&quot;</span><span class="p">):</span>
+                <span class="n">_dy</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">dy</span>
+                <span class="n">dy</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_dy</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">_dy</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">_dy</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dy</span> <span class="o">=</span> <span class="mf">100.0</span>
+
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;dz&quot;</span><span class="p">):</span>
+                <span class="n">_dz</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">dz</span>
+                <span class="n">dz</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">_dz</span><span class="p">)</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isscalar</span><span class="p">(</span><span class="n">_dz</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">_dz</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dz</span> <span class="o">=</span> <span class="mf">10.0</span>
+
+            <span class="c1"># Get permeability</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;permeability&quot;</span><span class="p">):</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">permeability</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># kx</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="s2">&quot;permiability&quot;</span><span class="p">):</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">permiability</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>  <span class="c1"># kx</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">k</span> <span class="o">=</span> <span class="mf">1e-13</span>  <span class="c1"># Default: ~100 md</span>
+
+            <span class="c1"># Compute productivity index</span>
+            <span class="n">well</span><span class="o">.</span><span class="n">compute_productivity_index</span><span class="p">(</span>
+                <span class="n">permeability</span><span class="o">=</span><span class="n">k</span><span class="p">,</span>
+                <span class="n">viscosity</span><span class="o">=</span><span class="n">viscosity</span><span class="p">,</span>
+                <span class="n">dx</span><span class="o">=</span><span class="n">dx</span><span class="p">,</span>
+                <span class="n">dy</span><span class="o">=</span><span class="n">dy</span><span class="p">,</span>
+                <span class="n">dz</span><span class="o">=</span><span class="n">dz</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Apply constraints</span>
+            <span class="n">rate</span><span class="p">,</span> <span class="n">bhp</span> <span class="o">=</span> <span class="n">well</span><span class="o">.</span><span class="n">apply_constraints</span><span class="p">(</span>
+                <span class="n">cell_pressure</span><span class="o">=</span><span class="n">cell_pressure</span><span class="p">,</span>
+                <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># Add to source terms (negative = production)</span>
+            <span class="n">source_terms</span><span class="p">[</span><span class="n">cell_idx</span><span class="p">]</span> <span class="o">+=</span> <span class="n">rate</span>
+
+            <span class="c1"># Log well status</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Well </span><span class="si">{</span><span class="n">well_name</span><span class="si">}</span><span class="s2">: rate=</span><span class="si">{</span><span class="n">rate</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> kg/s, BHP=</span><span class="si">{</span><span class="n">bhp</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mf">1e5</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> bar&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">source_terms</span></div>
+
+
+<div class="viewcode-block" id="WellManager.get_well_summary">
+<a class="viewcode-back" href="../../../well_models.html#garuda.WellManager.get_well_summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_well_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get summary of all wells.&quot;&quot;&quot;</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;total_wells&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="p">),</span>
+            <span class="s2">&quot;producers&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;injectors&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">&quot;total_production&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;total_injection&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">&quot;wells&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">well</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wells</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">well_info</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+                <span class="s2">&quot;cell&quot;</span><span class="p">:</span> <span class="n">well</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">cell_index</span><span class="p">,</span>
+                <span class="s2">&quot;rate&quot;</span><span class="p">:</span> <span class="n">well</span><span class="o">.</span><span class="n">current_rate</span><span class="p">,</span>
+                <span class="s2">&quot;bhp&quot;</span><span class="p">:</span> <span class="n">well</span><span class="o">.</span><span class="n">current_bhp</span><span class="p">,</span>
+            <span class="p">}</span>
+
+            <span class="c1"># classify by sign convention: negative production = producer</span>
+            <span class="n">is_producer</span> <span class="o">=</span> <span class="n">well</span><span class="o">.</span><span class="n">current_rate</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">well</span><span class="o">.</span><span class="n">current_rate</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">well</span><span class="o">.</span><span class="n">operating</span><span class="o">.</span><span class="n">target_value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_producer</span><span class="p">:</span>
+                <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;producers&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;total_production&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">well</span><span class="o">.</span><span class="n">current_rate</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;injectors&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;total_injection&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">well</span><span class="o">.</span><span class="n">current_rate</span><span class="p">)</span>
+
+            <span class="n">summary</span><span class="p">[</span><span class="s2">&quot;wells&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">well_info</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">summary</span></div>
+</div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># DEMO</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Peaceman Well Model Demo&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+
+    <span class="c1"># Create well manager</span>
+    <span class="n">manager</span> <span class="o">=</span> <span class="n">WellManager</span><span class="p">()</span>
+
+    <span class="c1"># Add production well</span>
+    <span class="n">manager</span><span class="o">.</span><span class="n">add_well</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;PROD-1&quot;</span><span class="p">,</span>
+        <span class="n">cell_index</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+        <span class="n">well_type</span><span class="o">=</span><span class="s2">&quot;producer&quot;</span><span class="p">,</span>
+        <span class="n">target_rate</span><span class="o">=</span><span class="mf">45.0</span><span class="p">,</span>  <span class="c1"># 45 kg/s</span>
+        <span class="n">skin_factor</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">max_rate</span><span class="o">=</span><span class="mf">60.0</span><span class="p">,</span>
+        <span class="n">min_bhp</span><span class="o">=</span><span class="mf">100e5</span><span class="p">,</span>  <span class="c1"># 100 bar</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Add injection well</span>
+    <span class="n">manager</span><span class="o">.</span><span class="n">add_well</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;INJ-1&quot;</span><span class="p">,</span>
+        <span class="n">cell_index</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">well_type</span><span class="o">=</span><span class="s2">&quot;injector&quot;</span><span class="p">,</span>
+        <span class="n">target_rate</span><span class="o">=</span><span class="mf">40.0</span><span class="p">,</span>  <span class="c1"># 40 kg/s</span>
+        <span class="n">skin_factor</span><span class="o">=-</span><span class="mf">2.0</span><span class="p">,</span>  <span class="c1"># Stimulated</span>
+        <span class="n">max_rate</span><span class="o">=</span><span class="mf">50.0</span><span class="p">,</span>
+        <span class="n">max_bhp</span><span class="o">=</span><span class="mf">250e5</span><span class="p">,</span>  <span class="c1"># 250 bar</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Well Summary:&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="n">summary</span> <span class="o">=</span> <span class="n">manager</span><span class="o">.</span><span class="n">get_well_summary</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total wells: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;total_wells&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Producers: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;producers&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Injectors: </span><span class="si">{</span><span class="n">summary</span><span class="p">[</span><span class="s1">&#39;injectors&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;✅ Peaceman well model demo completed!&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">70</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Zulfikar Aji Kusworo.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
