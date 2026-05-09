@@ -53,6 +53,10 @@ jobs:
     # Don't fail the whole workflow on docs build issues — the Sphinx tree
     # is still being shaped up. Re-enable strictness once docs build clean.
     continue-on-error: true
+    # peaceiris/actions-gh-pages needs write access on the contents scope
+    # (the default GITHUB_TOKEN is read-only when no permissions block is set).
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
